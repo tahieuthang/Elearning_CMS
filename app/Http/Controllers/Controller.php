@@ -22,6 +22,15 @@ class Controller extends BaseController
         }
         return response()->json($response, Response::HTTP_OK);
     }
+
+    public function badRequestErrorResponse()
+    {
+        return response()->json([
+            'errorCode' => ResponseCode::$BAD_REQUEST,
+            'message' => __('error')[ResponseCode::$BAD_REQUEST]
+        ], Response::HTTP_BAD_REQUEST);
+    }
+
     public function notFoundErrorResponse()
     {
         return response()->json([
@@ -29,6 +38,7 @@ class Controller extends BaseController
             'message' => __('error')[ResponseCode::$NOT_FOUND]
         ], Response::HTTP_NOT_FOUND);
     }
+
     public function internalServerErrorResponse()
     {
         return response()->json([
@@ -36,16 +46,26 @@ class Controller extends BaseController
             'message' => __('error')[ResponseCode::$INTERNAL_ERROR]
         ], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
+
     public function createdSuccessResponse()
     {
         return response()->json([
             'message' => ResponseCode::$CREATED,
         ], Response::HTTP_OK);
     }
+
     public function deletedSuccessResponse()
     {
         return response()->json([
             'message' => ResponseCode::$DELETED,
         ], Response::HTTP_OK);
+    }
+
+    public function customErrorResponse($errorCode, $message, $httpErrorCode)
+    {
+        return response()->json([
+            'errorCode' => $errorCode,
+            'message' => $message,
+        ], $httpErrorCode);
     }
 }

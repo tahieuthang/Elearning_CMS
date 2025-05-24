@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\ResponseCode;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\CustomerServices;
@@ -16,12 +17,15 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Validation\ValidationException;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\CustomerActiveNotification;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use App\Services\CustomerService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Claims\Custom;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 
 class CustomerController extends Controller
 {
@@ -39,7 +43,7 @@ class CustomerController extends Controller
       $request->validate([
         "first_name" => 'required|string|max:255',
         "last_name" => 'required|string|max:255',
-        "email" => 'required|string|unique:customers,email',
+        "email" => 'required|string|email|unique:customers,email',
         "password" => 'required|string|min:6',
       ]);
 
@@ -52,6 +56,7 @@ class CustomerController extends Controller
         "confirmation_code" => Str::random(6),
       ];
       $customner = Customer::create($data);
+      
       $newCustomer = Customer::find($customner->id);
       $newCustomer->notify(new CustomerActiveNotification($newCustomer->confirmation_code));
       DB::commit();
@@ -62,8 +67,6 @@ class CustomerController extends Controller
         'code' => $newCustomer->confirmation_code
       ], 201);
     } catch (ValidationException $e) {
-      dd($e);
-      // Handle validation exceptions
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
       return response()->json([
@@ -84,44 +87,33 @@ class CustomerController extends Controller
 
   public function verifyEmail(Request $request)
   {
+    DB::beginTransaction();
     try {
       $code = $request->code;
       $this->customerServices->verify($code);
       DB::commit();
       return $this->successResponse();
-      // DB::beginTransaction();
-      // $code = $request->code;
-      // $customer = $this->customerServices->verify($code);
-
-      // if (!$customer) {
-      //   DB::rollBack();
-      //   return response()->json([
-      //     'status' => 404,
-      //     'error' => 'Mã xác nhận không hợp lệ',
-      //   ], 404);
-      // }
-
-      // if ($customer && $customer->status === Config::get('constants.customer_status_enable')) {
-      //   DB::commit();
-      //   return response()->json([
-      //     'status' => 201,
-      //     'message' => 'Xác thực email thành công',
-      //     'customer' => $customer,
-      //   ], 201);
-      // }
-      // // Trường hợp khách hàng đã xác thực email trước đó
-      // DB::rollBack();
-      // return response()->json([
-      //   'status' => 400,
-      //   'error' => 'Email đã được xác thực trước đó.',
-      // ], 400);
-    } catch (\Exception $e) {
+    } catch (NotFoundHttpException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
-      return response()->json([
-        'status' => 500,
-        'error' => 'An error occurred while registering the customer.',
-      ], 500);
+      return $this->customErrorResponse(
+          ResponseCode::$NOT_FOUND,
+          $e->getMessage(),
+          Response::HTTP_NOT_FOUND
+      );
+    } catch (ConflictHttpException $e) {
+        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+        DB::rollBack();
+        return $this->customErrorResponse(
+            ResponseCode::$CONFLICT,
+            $e->getMessage(),
+            Response::HTTP_CONFLICT
+        );
+    } catch (\Exception $e) {
+        // Handle any other exceptions
+        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+        DB::rollBack();
+        return $this->internalServerErrorResponse();
     }
   }
 
@@ -132,11 +124,21 @@ class CustomerController extends Controller
         'email' => 'required|max:255|email',
         'password' => 'required|min:6|max:255',
       ]);
+
+      $customer = Customer::where('email', $request->email)->first();
+      if(!$customer) {
+        return response()->json([
+          'status' => 404,
+          'error' => 'Email not registerd',
+        ], 404);
+      }
+
       $token = Auth::guard('customer')->attempt([
         'email' => $request->email,
         'password' => $request->password,
         'status' => Config::get('constants.customer_status_enable'),
       ]);
+
       if ($token) {
         $customer = Auth::guard('customer')->user();
         return response()->json([
@@ -145,14 +147,21 @@ class CustomerController extends Controller
           'user' => $customer,
           'token_type' => 'Bearer',
         ]);
+      } else {
+        return response()->json([
+          'status' => 401,
+          'error' => 'Password is incorrect',
+        ], 401);
       }
-
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
       return response()->json([
-        'status' => 401,
-        'error' => 'Invalid login credentials or token.',
-      ], 401);
+        'status' => 422,
+        'error' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422);
     } catch (\Exception $e) {
-      dd($e);
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     }
@@ -267,80 +276,83 @@ class CustomerController extends Controller
     }
   }
   // Tạm thời phong ấn 2 chức năng này "Gửi confirm_code đến email trước khi đặt lại mk"
-  // public function sendResetLinkEmail(Request $request)
-  // {
-  //   try {
-  //     $request->validate([
-  //       "email" => 'required|string|exists:customer,email',
-  //     ]);
-  //     $status = Password::broker('customers')->sendResetLink($request->only('email'));
+  public function sendResetLinkEmail(Request $request)
+  {
+    try {
+      $request->validate([
+        "email" => 'required|string|exists:customer,email',
+      ]);
 
-  //     if ($status == Password::RESET_LINK_SENT) {
-  //       return response()->json(['message' => 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn']);
-  //     }
+      $status = Password::broker('customers')->sendResetLink([
+        'email' => $request->email,
+      ]);
 
-  //     return response()->json(['error' => 'Không thể gửi email đặt lại mật khẩu.'], 500);
-  //   } catch (ValidationException $e) {
-  //     Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-  //     DB::rollBack();
-  //     return response()->json([
-  //       'status' => 422,
-  //       'error' => 'Validation failed.',
-  //       'errors' => $e->errors(),
-  //     ], 422);
-  //   } catch (\Exception $e) {
-  //     Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-  //     DB::rollBack();
-  //     return response()->json([
-  //       'status' => 500,
-  //       'error' => 'An error occurred while registering the customer.',
-  //     ], 500);
-  //   }
-  // }
+      if ($status === Password::RESET_LINK_SENT) {
+        return response()->json(['message' => 'Reset link sent']);
+      } else {
+          return response()->json(['error' => 'Unable to send reset link'], 500);
+      }
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return response()->json([
+        'status' => 422,
+        'error' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return response()->json([
+        'status' => 500,
+        'error' => 'An error occurred while registering the customer.',
+      ], 500);
+    }
+  }
 
-  // public function reset(Request $request)
-  // {
-  //   try {
-  //     $request->validate([
-  //       'email' => 'required|email|exists:customers,email',
-  //       'password' => 'required|string|min:6|confirmed',
-  //       'token' => 'required|string',
-  //     ]);
+  public function reset(Request $request)
+  {
+    try {
+      $request->validate([
+        'email' => 'required|email|exists:customers,email',
+        'password' => 'required|string|min:6|confirmed',
+        'token' => 'required|string',
+      ]);
 
-  //     $status = Password::broker('customers')->reset(
-  //       $request->only('email', 'password', 'password_confirmation', 'token'),
-  //       function ($customer, $password) {
-  //         $customer->password = Hash::make($password);
-  //         $customer->save();
-  //       }
-  //     );
+      $status = Password::broker('customers')->reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($customer, $password) {
+          $customer->password = Hash::make($password);
+          $customer->save();
+        }
+      );
 
-  //     if ($status == Password::PASSWORD_RESET) {
-  //       return response()->json([
-  //         'message' => 'Mật khẩu đã được đặt lại thành công'
-  //       ]);
-  //     }
+      if ($status == Password::PASSWORD_RESET) {
+        return response()->json([
+          'message' => 'Mật khẩu đã được đặt lại thành công'
+        ]);
+      }
 
-  //     return response()->json([
-  //       'message' => 'Đặt lại mật khẩu thất bại.'
-  //     ], 500);
-  //   } catch (ValidationException $e) {
-  //     Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-  //     DB::rollBack();
-  //     return response()->json([
-  //       'status' => 422,
-  //       'error' => 'Validation failed.',
-  //       'errors' => $e->errors(),
-  //     ], 422);
-  //   } catch (\Exception $e) {
-  //     Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-  //     DB::rollBack();
-  //     return response()->json([
-  //       'status' => 500,
-  //       'error' => 'An error occurred while registering the customer.',
-  //     ], 500);
-  //   }
-  // }
+      return response()->json([
+        'message' => 'Đặt lại mật khẩu thất bại.'
+      ], 500);
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return response()->json([
+        'status' => 422,
+        'error' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return response()->json([
+        'status' => 500,
+        'error' => 'An error occurred while registering the customer.',
+      ], 500);
+    }
+  }
 
   public function getOrders(Request $request)
   {

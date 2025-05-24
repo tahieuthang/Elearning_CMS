@@ -141,6 +141,7 @@ class CourseController extends Controller
     $courseStatus = Config::get('constants.course_status');
     $categoryList = PostCategory::getPostCategoryList();
     $tagList = Tag::getTagList();
+    // dd($course);
     return view('course/detail', [
       'course' => $course,
       'courseStatus' => $courseStatus,

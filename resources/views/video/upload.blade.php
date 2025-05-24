@@ -11,12 +11,12 @@
 @stop
 
 @section('content')
-<div class="timne line">
+<div class="time line">
   <div class="timeline-header">
     <span>Tải lên tối đa 5 video</span>
     <span>{{ $currentTime->format('d/m/Y H:i') }}</span>
   </div>
-  <div class="video-loading">
+  <div class="">
     <input id="input-pd" name="input-pd[]" type="file" class="file" data-preview-file-type="text" multiple accept="video/*">
   </div>
 </div>
@@ -25,12 +25,16 @@
 @section('js')
 <script>
   $(document).ready(() => {
-    const maxCapacity = {{ \Config::get('constants.max_capacity_video_upload') }};
-    
+    const maxCapacity = {
+      {
+        \
+        Config::get('constants.max_capacity_video_upload')
+      }
+    }
     $.fn.fileinputBsVersion = "3.3.7";
-  
+
     // $("#input-pd").fileinput();
-  
+
     // // with plugin options
     // $("#input-pd").fileinput({
     //   'showUpload': false,
@@ -40,7 +44,7 @@
     $("#input-pd").fileinput({
         maxFileSize: maxCapacity,
         headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         enableResumableUpload: true,
         allowedPreviewTypes: ['video'],
@@ -69,10 +73,10 @@
         //   return {};
         // },
         uploadExtraData: function() {
-                    return {
-                        '_token': $('input[name="_token"]').val(),
-                    }
-                },
+          return {
+            '_token': $('input[name="_token"]').val(),
+          }
+        },
         initialPreviewAsData: true,
         initialPreviewFileType: 'video',
       }).on('fileuploaded', function(event, previewId, index, fileId, fileName) {
@@ -97,7 +101,7 @@
           }
         });
       });
-  
+
     function saveVideoIdAfterUpload(fileId, filePath) {
       console.log("Saving file:", fileId, filePath);
       $.ajax({

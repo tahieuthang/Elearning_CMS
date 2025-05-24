@@ -38,6 +38,7 @@ class VideoController extends Controller
   {
     $filterData = [];
     $data = $this->videoServices->getVideos($filterData);
+    // dd($data);
     $dataVideoTables = $this->videoServices->formatVideoListDataTableForCreateCource($data);
     // dd($dataVideoTables);
     return $dataVideoTables;

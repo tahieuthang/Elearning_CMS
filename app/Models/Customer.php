@@ -51,4 +51,8 @@ class Customer extends Authenticatable implements JWTSubject
     {
         return [];
     }
+    public function getFullNameAttribute()
+    {
+        return ucwords("{$this->first_name} {$this->last_name}");
+    }
 }

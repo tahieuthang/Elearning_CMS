@@ -1,7 +1,7 @@
 <?php
 
 return [
-  'system_name' => 'VFL Academy management system',
+  'system_name' => 'Elearning Fitness management system',
   'home_page' =>
   [
     'menu' => 'Trang chủ',

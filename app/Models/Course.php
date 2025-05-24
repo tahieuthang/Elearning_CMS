@@ -30,6 +30,10 @@ class Course extends Model
   {
     return $this->belongsToMany(Order::class, 'order_items', 'course_id', 'order_id');
   }
+  public function items()
+  {
+    return $this->hasMany(OrderItem::class);
+  }
   public static function getCourseRelationShipById($id)
   {
     $course = Course::with('courseCategories', 'courseTags', 'videos')->find($id);

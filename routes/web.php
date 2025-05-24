@@ -11,6 +11,9 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\VideoController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentTransactionController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\PermissionMiddleware;
 
 
@@ -63,7 +66,7 @@ Route::group(['prefix' => 'permission', 'as' => 'permission', 'middleware' => ['
   Route::delete('/delete/{id}', [AdminController::class, 'deletePermission'])->name('.delete');
 });
 
-// Quản lý bài viết (còn xóa post và xóa ảnh thumbnail)
+// Quản lý bài viết (còn xóa ảnh thumbnail)
 Route::group(['prefix' => 'posts', 'as' => 'posts', 'middleware' => 'auth'], function () {
   Route::get('/list', [PostController::class, 'list'])->middleware(PermissionMiddleware::class . ':post.list')->name('.list'); //ok
   Route::get('/create', [PostController::class, 'create'])->middleware(PermissionMiddleware::class . ':post.create')->name('.create'); //ok
@@ -142,4 +145,22 @@ Route::group(['prefix' => 'courses', 'as' => 'courses', 'middleware' => 'auth'],
   Route::post('/delete-img-banner/{id}', [CourseController::class, 'deleteBanner'])->name('.delete-banner');
   Route::post('/upload-img', [CourseController::class, 'uploadImage'])->name('.uploadImage');
   Route::delete('/delete/{id}', [CourseController::class, 'deleteCourse'])->name('.delete');
+});
+
+
+// Quản lý hóa đơn order (finish)
+Route::group(['prefix' => 'order', 'as' => 'order', 'middleware' => 'auth'], function () {
+  Route::get('/list', [OrderController::class, 'list'])->middleware(PermissionMiddleware::class . ':order.list')->name('.list');
+  Route::get('/anyData', [OrderController::class, 'anyData'])->middleware(PermissionMiddleware::class . ':order.list')->name('.anyData');
+  Route::get('/detail/{id}', [OrderController::class, 'detail'])->middleware(PermissionMiddleware::class . ':order.detail')->name('.detail');
+});
+
+// Quản lý giao dịch 
+Route::group(['prefix' => 'payment-transaction', 'as' => 'payment_transaction', 'middleware' => 'auth'], function () {
+  Route::get('/list', [PaymentTransactionController::class, 'list'])->middleware(PermissionMiddleware::class . ':payment_transaction.list')->name('.list');
+  Route::get('/anyData', [PaymentTransactionController::class, 'anyData'])->middleware(PermissionMiddleware::class . ':payment_transaction.list')->name('.anyData');
+});
+
+Route::group(['middleware' => 'auth'], function () {
+  Route::get('/home', [StatisticsController::class, 'statisticsPage'])->name('.home');
 });

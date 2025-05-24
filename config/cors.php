@@ -19,7 +19,7 @@ return [
 
   'allowed_methods' => ['*'], // Các HTTP method được phép (GET, POST, PUT,...)
 
-  'allowed_origins' => ['http://localhost:8080'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
+  'allowed_origins' => ['http://localhost:5173'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
 
   'allowed_origins_patterns' => [], // Mẫu domain cho phép (regex nếu cần)
 

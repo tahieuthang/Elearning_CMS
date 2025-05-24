@@ -26,6 +26,7 @@ return [
   'original_price' => 'Giá gốc',
   'sale_off_price' => 'Giá khuyến mại',
   'video_selection' => 'Chọn video',
+  'purchases' => 'Lượt mua',
   'status_list' => [
     1 => 'Hiển thị',
     2 => 'Ẩn'

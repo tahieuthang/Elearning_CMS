@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="{{ asset('/vendor/adminlte/dist/css/adminlte.min.css') }}">
   <style>
     .login-page {
-      background-image: url('dist/images/banner-login.png')
+      background-image: url('/images/efd9500813c5c7d95fda1f50c4a96efc.jpg')
     }
 
     .login-box-msg-1 {
@@ -25,7 +25,7 @@
   <div class="login-box">
     <div class="login-logo">
       <a href="/">
-        <img src="{{ asset('images/logo.svg') }}" />
+        <!-- <img src="{{ asset('images/logo.svg') }}" /> -->
       </a>
     </div>
 

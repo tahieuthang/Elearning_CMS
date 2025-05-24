@@ -282,31 +282,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script>
   $(document).ready(function() {
-    // function handleDelThumbnail(courseId) {
-    //   $.ajax({
-    //     url: '/courses/delete-thumnail/' + courseId,
-    //     type: 'post',
-    //     data: {
-    //       "_token": $('meta[name="csrf-token"]').attr('content'),
-    //       "id": courseIdss
-    //     },
-    //     success: function(response) {
-    //       if (response.status) {
-    //         console.log(response)
-    //         const msgDeleteSuccess = "<?php echo __('post.message.delete_post_success') ?>"
-    //         Swal.fire(msgDeleteSuccess, '', 'success')
-    //       } else {
-    //         Swal.fire('fail!', response.message, '')
-    //       }
-    //     }
-    //   });
-    // }
+    function handleDelThumbnail(courseId) {
+      $.ajax({
+        url: '/courses/delete-thumnail/' + courseId,
+        type: 'post',
+        data: {
+          "_token": $('meta[name="csrf-token"]').attr('content'),
+          "id": courseIdss
+        },
+        success: function(response) {
+          if (response.status) {
+            console.log(response)
+            const msgDeleteSuccess = "<?php echo __('post.message.delete_post_success') ?>"
+            Swal.fire(msgDeleteSuccess, '', 'success')
+          } else {
+            Swal.fire('fail!', response.message, '')
+          }
+        }
+      });
+    }
 
-    // $("#input-pd").on('click', '.fileinput-remove', function(event, key, jqXHR, data) {
-    //   console.log(11111);
-    //   var courseId = $('#id').val();
-    //   handleDelThumbnail(courseId)
-    // });
+    $("#input-pd").on('click', '.fileinput-remove', function(event, key, jqXHR, data) {
+      console.log(11111);
+      var courseId = $('#id').val();
+      handleDelThumbnail(courseId)
+    });
 
     var thumbnailUrl = "{{ $course && $course->thumbnail ? $course->thumbnail : null }}";
     var bannerUrl = "{{ $course && $course->banner ? $course->banner : null }}";

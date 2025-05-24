@@ -17,9 +17,8 @@
 <link rel="stylesheet" href="{{ asset('css/receipt.add.css') }}">
 @stop
 @section('js')
-<script type="text/javascript" src="{{ asset('plugins/ckeditor/ckeditor.js') }}"></script>
 <script>
-  const editor = CKEDITOR.replace('content', {
+    const editor = CKEDITOR.replace('content', {
     fileTools_requestHeaders: {
       'X-CSRFToken': '{{ csrf_token() }}',
     },
@@ -46,13 +45,9 @@
   let isClickedSubmit = false
 
   //   handle upload room image
-  const maxCapacity = {
-    {
-      \
-      Config::get('constants.max_capacity_image_upload')
-    }
-  }
+  const maxCapacity = {{ \Config::get('constants.max_capacity_image_upload') }}
   const post = @json($post);
+  console.log(post);
 
   if (post) {
     const initialPreview = [post.thumbnail]
@@ -89,8 +84,33 @@
       initialPreviewFileType: 'image',
     }).on('fileuploaded', function(e, params) {
       console.log('File uploaded params', params);
-    })
+    }).on('click', '.fileinput-remove', function(event, key, jqXHR, data) {
+      console.log("File đã bị xóa:", key);
+      var postId = $('#id').val();
+      handleDelThumbnail(postId)
+    });
   }
+
+  function handleDelThumbnail(postId) {
+      $.ajax({
+        url: '/posts/delete-img/' + postId,
+        type: 'post',
+        data: {
+          "_token": $('meta[name="csrf-token"]').attr('content'),
+          "id": postId
+        },
+        success: function(response) {
+          if (response.status) {
+            console.log(response)
+            handlerFilter()
+            const msgDeleteSuccess = "<?php echo __('post.message.delete_post_success') ?>"
+            Swal.fire(msgDeleteSuccess, '', 'success')
+          } else {
+            Swal.fire('fail!', response.message, '')
+          }
+        }
+      });
+    }
 
   $('#form-post').validate({
     rules: {
@@ -111,14 +131,11 @@
     },
   });
 
-  // $('.btn-submit-post').on('click', function() {
-  //   isClickedSubmit = true;
-  //   $("#input-pd").fileinput('upload');
-  // })
 
   window.onbeforeunload = function() {
     if (form.serialize() != original && !isClickedSubmit)
       return 'Are you sure you want to leave?'
   }
+  
 </script>
 @stop

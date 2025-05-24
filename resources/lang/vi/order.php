@@ -1,0 +1,36 @@
+<?php
+    return [
+        'order_management' => 'Quản lý đơn hàng',
+        'filter_code' => 'Tìm kiếm theo mã đơn hàng',
+        'filter_status' => 'Tìm kiếm theo trạng thái',
+        'code' => 'Mã đơn hàng',
+        'amount' => 'Tổng tiền',
+        'order_customer' => 'Khách hàng',
+        'payment_method' => 'Phương thức thanh toán',
+        'payment_time' => 'Ngày thanh toán',
+        'status' => 'Trạng thái',
+        'created_at' => 'Ngày tạo',
+        'action' => 'Thao tác',
+        'detail_order' => 'Chi tiết đơn hàng',
+        'items_list' => [
+            'title' => 'Danh sách khóa học',
+            'course_title' => 'Tên khóa học',
+            'quantity' => 'Số lượng',
+            'price' => 'Giá',
+            'amount' => 'Thành tiền',
+        ],
+        'status_list' => [
+            'placed' => 'Đã đặt',
+            'processing' => 'Đang xử lý',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+        ],
+        'status_list_by_value' => [
+            1 => 'Đã đặt',
+            2 => 'Đang xử lý',
+            3 => 'Hoàn thành',
+            4 => 'Đã hủy',
+        ],
+        'filter_code_placeholder' => 'Nhập mã đơn hàng',
+        'filter_status_placeholder' => 'Chọn trạng thái',
+    ];

@@ -12,4 +12,6 @@ class ResponseCode
   public static $INTERNAL_ERROR = 'InternalError';
   public static $UNAUTHORIZED = 'UnAuthorized';
   public static $CUSTOMER_NOT_ENABLE = 'CustomerNotEnable';
+  public static $BAD_REQUEST = 'Bad Request';
+  public static $CONFLICT = 'Conflict';
 }

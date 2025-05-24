@@ -149,29 +149,6 @@
 <script src="{{ asset('ckeditor/ckeditor.js') }}"></script>
 <script>
   $(document).ready(function() {
-    $('.select2').select2()
-
-    function handleDelThumbnail(postId) {
-      $.ajax({
-        url: '/posts/delete-img/' + postId,
-        type: 'post',
-        data: {
-          "_token": $('meta[name="csrf-token"]').attr('content'),
-          "id": postId
-        },
-        success: function(response) {
-          if (response.status) {
-            console.log(response)
-            handlerFilter()
-            const msgDeleteSuccess = "<?php echo __('post.message.delete_post_success') ?>"
-            Swal.fire(msgDeleteSuccess, '', 'success')
-          } else {
-            Swal.fire('fail!', response.message, '')
-          }
-        }
-      });
-    }
-
     var thumbnailUrl = "{{ $post && $post->thumbnail ? $post->thumbnail : null }}";
 
     if (thumbnailUrl) {
@@ -189,20 +166,6 @@
         previewFileType: 'any'
       });
     }
-    $("#input-pd").on('click', '.fileinput-remove', function(event, key, jqXHR, data) {
-      console.log("File đã bị xóa:", key);
-      var postId = $('#id').val();
-      handleDelThumbnail(postId)
-    });
-    // file input
-    $.fn.fileinputBsVersion = "3.3.7";
 
-    $("#input-pd").fileinput();
-
-    // with plugin options
-    $("#input-pd").fileinput({
-      'showUpload': false,
-      'previewFileType': 'any'
-    });
   });
 </script>
