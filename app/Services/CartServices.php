@@ -10,6 +10,7 @@ use App\Models\Cart;
 use Illuminate\Http\Request;
 use App\Helpers\Helper;
 use App\Models\Course;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,9 +26,13 @@ class CartServices
         'carts.course_title as course_title',
         'carts.quantity as quantity',
         'carts.price as price',
+        'courses.id as course_id',
+        'courses.description',
+        'courses.thumbnail',
+        'courses.author',
         DB::raw('(CASE WHEN sale_off_price IS NULL THEN original_price ELSE sale_off_price END) as price')
       )
-      ->join('courses', 'courses.id', '=', 'carts.course_id')
+      ->join('courses', 'carts.course_id', '=', 'courses.id')
       ->where('customer_id', auth('customer')->user()->id)
       ->get();
     return $queries;

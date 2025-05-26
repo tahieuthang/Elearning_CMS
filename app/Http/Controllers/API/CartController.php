@@ -10,6 +10,7 @@ use App\Helpers\Helper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -22,7 +23,7 @@ class CartController extends Controller
   {
     try {
       $content = $this->cartServices->getCartContent();
-      return $this->successResponse(['content' => $content]);
+      return $this->successResponse(['contents' => $content]);
     } catch (\Exception $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
@@ -43,7 +44,6 @@ class CartController extends Controller
       DB::commit();
       return $this->createdSuccessResponse();
     } catch (\Exception $e) {
-      dd($e);
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     }
