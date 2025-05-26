@@ -481,7 +481,6 @@ class CourseServices
 
   public function getCoursesList($filterData)
   {
-    try {
       $results = Course::select(
         "id",
         "title",
@@ -492,30 +491,32 @@ class CourseServices
         "authorDescription",
         "course_duration",
         "content",
-        "content",
         "original_price",
         "sale_off_price",
       )->with([
-        'courseCategories:id, category_name',
-        'courseTags: id, tag_name',
+        'courseCategories:id,category_name',
+        'courseTags:id,tag_name',
         'videos'
       ]);
       $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
       $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
 
       if (!empty($filterData['status'])) {
-        return $results->whereIn('status', $filterData['status']);
+        $results->whereIn('status', $filterData['status']);
       }
+
       if (!empty($filterData['category_name'])) {
         $results->whereHas('courseCategories', function ($q) use ($filterData) {
           $q->whereIn('category_name', $filterData['category_name']);
         });
       }
+
       if (!empty($filterData['tag_name'])) {
         $results->whereHas('courseTags', function ($q) use ($filterData) {
           $q->whereIn('tag_name', $filterData['tag_name']);
         });
       }
+
       if (isset($filterData['keyword'])) {
         $results->where(function ($q) use ($filterData) {
           $likeStr = '%' . Helper::escapeLike($filterData['keyword']) . '%';
@@ -525,10 +526,6 @@ class CourseServices
         });
       }
       return $results->paginate($perPage, ['*'], '', $page);
-    } catch (\Exception $e) {
-      Log::error("Error in getCoursesList: " . $e->getMessage());
-      return response()->json(['error' => $e->getMessage()], 500);
-    }
   }
 
   // Hàm này giúp render ra all course, course nào đã dc mua sẽ đc format lại bằng is_bought = true
