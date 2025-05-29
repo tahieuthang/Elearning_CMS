@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Log;
 use App\Jobs\UploadToVimeo;
 use Vimeo\Laravel\Facades\Vimeo;
 use Illuminate\Http\Request;
+use Laravel\Ui\Presets\React;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Models\CourseVideo;
 
 class VideoServices
 {
@@ -29,6 +32,19 @@ class VideoServices
     $videos = VideoUploading::where('job_status', config('constants.job_status.success'))
       ->orderBy('job_id', 'desc')->get();
     return $videos;
+  }
+
+  public function getVimeo($id)
+  {
+    $vimeoId = CourseVideo::find($id)->vimeo_id;
+    $vimeoApi = '/videos/' . $vimeoId;
+    $vimeoUrl = Vimeo::request($vimeoApi, [], 'GET');
+
+    if (!empty($vimeoUrl['body']['error'])) {
+        throw new NotFoundHttpException(__('Not found Vimeo!'));
+    }
+
+    return $vimeoUrl['body']['embed']['html'] ?? '';
   }
 
   public function formatVideoData($data)
