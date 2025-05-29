@@ -18,7 +18,6 @@ class PostController extends Controller
   }
   public function getPostList(Request $request)
   {
-
     try {
       $postList = $this->postServices->getPostPagination($request);
       if ($postList) {
@@ -31,7 +30,6 @@ class PostController extends Controller
         ], 200);
       }
     } catch (\Exception $e) {
-      dd($e);
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     }
@@ -40,7 +38,7 @@ class PostController extends Controller
   public function getPostDetail(Request $request)
   {
     try {
-      $post = Post::getPostRelationShipId($request->id);
+      $post = Post::getPostRelationShipById($request->id);
       if ($post) {
         return response()->json([
           'status' => 200,
