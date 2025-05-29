@@ -41,7 +41,7 @@
           </div>
         </div>
         @endif
-        <form id="form-post" method="POST" action="{{ $course ? route('courses.update', ['id' => $course->id])
+        <form id="form-course" method="POST" action="{{ $course ? route('courses.update', ['id' => $course->id])
          : route('courses.createCourse') }}"
           enctype="multipart/form-data">
           {{ csrf_field() }}
@@ -97,7 +97,7 @@
 
             </div>
 
-            <input type="hidden" name="video-list[]" class="input-video-list" />
+            <input type="hidden" name="video-list" class="input-video-list" />
             <div class="form-group">
               <label for="room-name">{{ __('course.video_selection') }}</label>
               <div>
@@ -112,7 +112,7 @@
                 </div>
               </div>
               <div class="table table-wrapper">
-                <table class="table table-bordered w-full table-result">
+                <table class="table table-bordered w-full table-  lt">
                   <thead>
                     <tr>
                       <th style="width: 250px">Tiêu đề tập</th>
@@ -146,7 +146,6 @@
                                 <th>{{__('video.title')}}</th>
                                 <th>{{__('video.videoThumbnail')}}</th>
                                 <th>{{__('video.created_at')}}</th>
-                                <th>{{__('video.action')}}</th>
                               </tr>
                             </thead>
                           </table>
@@ -162,23 +161,22 @@
               </div>
               <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl" role="document">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title" id="exampleModalLabel">Chi tiết video</h5>
-                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                      </button>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Chi tiết video</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="custom-body-content">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                      <div class="custom-body-content">
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    </div>
-                  </div>
                 </div>
-              </div>
             </div>
 
             <div class="form-group">

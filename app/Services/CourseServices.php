@@ -217,25 +217,24 @@ class CourseServices
           CourseTag::insert($dataTags);
         }
       }
-
-      //   if (!empty($formData['video-list'])) {
-      //     $videoDataToSave = [];
-      //     $videoList = json_decode($formData['video-list']);
-      //     if (!empty($videoList)) {
-      //         foreach ($videoList as $video) {
-      //             $videoDataToSave[] = [
-      //                 'course_id' => $courseId,
-      //                 'video_title' => $video->epTitle,
-      //                 'video_description' => $video->epDescription,
-      //                 'vimeo_id' => $video->vimeoId,
-      //                 'video_thumbnail' => $video->epThumbnail,
-      //                 'created_at' => Carbon::now()->toDateTimeString(),
-      //                 'created_at' => Carbon::now()->toDateTimeString(),
-      //             ];
-      //         }
-      //     }
-      //     CourseVideo::insert($videoDataToSave);
-      // }
+      if (!empty($formData['video-list'])) {
+        $videoDataToSave = [];
+        $videoList = json_decode($formData['video-list']);
+        if (!empty($videoList)) {
+            foreach ($videoList as $video) {
+                $videoDataToSave[] = [
+                    'course_id' => $courseId,
+                    'video_title' => $video->epTitle,
+                    'video_description' => $video->epDescription,
+                    'vimeo_id' => $video->vimeoId,
+                    'video_thumbnail' => $video->epThumbnail,
+                    'created_at' => Carbon::now()->toDateTimeString(),
+                    'created_at' => Carbon::now()->toDateTimeString(),
+                ];
+            }
+        }
+        CourseVideo::insert($videoDataToSave);
+      }
 
       DB::commit();
       return [
@@ -316,24 +315,24 @@ class CourseServices
         }
       }
 
-      // CourseVideo::where('course_id', $id)->delete();
-      //   if(!empty($formData['video-list'])) {
-      //     $courseVideoData = [];
-      //     $videoList = json_decode($formData['video-list']);
-      //     if(!empty($videoList)) {
-      //       foreach($videoList as $video) {
-      //         $courseVideoData[] = [
-      //           'course_id' => $id,
-      //           'video_title' => $video->epTitle,
-      //           'video_description' => $video->epDescription,
-      //           'vimeo_id' => $video->vimeoId,
-      //           'video_thumbnail' => $video->epThumbnail,
-      //           'updated_at' => Carbon::now()->toDateTimeString(),
-      //         ];
-      //       }
-      //       CourseVideo::insert($courseVideoData);
-      //     }
-      //   }
+      CourseVideo::where('course_id', $id)->delete();
+        if(!empty($formData['video-list'])) {
+          $courseVideoData = [];
+          $videoList = json_decode($formData['video-list']);
+          if(!empty($videoList)) {
+            foreach($videoList as $video) {
+              $courseVideoData[] = [
+                'course_id' => $id,
+                'video_title' => $video->epTitle,
+                'video_description' => $video->epDescription,
+                'vimeo_id' => $video->vimeoId,
+                'video_thumbnail' => $video->epThumbnail,
+                'updated_at' => Carbon::now()->toDateTimeString(),
+              ];
+            }
+            CourseVideo::insert($courseVideoData);
+          }
+        }
       DB::commit();
       return [
         'status' => true,
@@ -626,11 +625,9 @@ class CourseServices
             ->where('status', config('constants.course_status_by_text.active'));
         })
         ->exists();
-    }
-
-    $courseDetail->is_bought = $isBought;
-
-    if (!$isBought) {
+      if($isBought) {
+        $courseDetail->is_bought = $isBought;
+      } 
       $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
     }
 
