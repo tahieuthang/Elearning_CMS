@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\VideoServices;
 use Illuminate\Http\Request;
 use App\Helpers\Helper;
-use Illuminate\Support\Facades\DB;
-use App\Helpers\ResponseCode;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class VideoController extends Controller
 {
@@ -18,17 +16,17 @@ class VideoController extends Controller
     $this->videoServices = $videoServices;
   }
 
-  public function getDetailVimeo(Request $request)
+  public function getDetailVimeo($id, Request $request)
   {
-    DB::beginTransaction();
     try {
-      $data = $this->videoServices->getDetailVimeo($request);
-      DB::commit();
-      return $this->successResponse($data);
-    } catch (\Exception $e) {
+      $vimeoUrl = $this->videoServices->getVimeo($id);
+      return $this->successResponse(['vimeo' => $vimeoUrl]);
+  } catch (NotFoundHttpException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      DB::rollBack();
+      return $this->notFoundErrorResponse();
+  } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
-    }
+  }
   }
 }
