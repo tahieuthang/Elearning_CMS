@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\ResetPasswordNotification;
 
 class Customer extends Authenticatable implements JWTSubject
 {
     protected $table = 'customers';
 
     use Notifiable;
-
     public $timestamps = true;
 
     protected $fillable = [
@@ -54,5 +55,10 @@ class Customer extends Authenticatable implements JWTSubject
     public function getFullNameAttribute()
     {
         return ucwords("{$this->first_name} {$this->last_name}");
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

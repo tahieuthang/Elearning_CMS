@@ -16,12 +16,13 @@ class ResetPasswordNotification extends Notification
 
   public function toMail($notifiable)
   {
-    $resetUrl = url('/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->email));
+    $url = "http://localhost:5173/password-reset?token={$this->token}&email={$notifiable->email}";
+
     return (new MailMessage)
-      ->subject('Yêu cầu đặt lại mật khẩu')
-      ->greeting('Xin chào!')
-      ->line('Bạn đã yêu cầu đặt lại mật khẩu. Nhấn vào nút bên dưới để tiếp tục:')
-      ->action('Đặt lại mật khẩu', $resetUrl)
-      ->line('Nếu bạn không yêu cầu, hãy bỏ qua email này.');
+        ->subject('Reset Password Notification')
+        ->greeting('Hello!')
+        ->line('You are receiving this email because we received a password reset request for your account.')
+        ->action('Reset Password', $url)
+        ->line('If you did not request a password reset, no further action is required.');
   }
 }

@@ -280,18 +280,16 @@ class CustomerController extends Controller
   {
     try {
       $request->validate([
-        "email" => 'required|string|exists:customer,email',
+        "email" => 'required|string|exists:customers,email',
       ]);
 
-      $status = Password::broker('customers')->sendResetLink([
-        'email' => $request->email,
-      ]);
+      $status = Password::broker('customers')->sendResetLink(
+        $request->only('email')
+      );
 
-      if ($status === Password::RESET_LINK_SENT) {
-        return response()->json(['message' => 'Reset link sent']);
-      } else {
-          return response()->json(['error' => 'Unable to send reset link'], 500);
-      }
+      return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Reset link sent to your email.'])
+            : throw ValidationException::withMessages(['email' => [__($status)]]);
     } catch (ValidationException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
@@ -314,7 +312,7 @@ class CustomerController extends Controller
   {
     try {
       $request->validate([
-        'email' => 'required|email|exists:customers,email',
+        'email' => 'required|email|exists:customers',
         'password' => 'required|string|min:6|confirmed',
         'token' => 'required|string',
       ]);
