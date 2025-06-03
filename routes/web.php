@@ -163,4 +163,6 @@ Route::group(['prefix' => 'payment-transaction', 'as' => 'payment_transaction', 
 
 Route::group(['middleware' => 'auth'], function () {
   Route::get('/home', [StatisticsController::class, 'statisticsPage'])->name('.home');
+  Route::post('export-pdf', [StatisticsController::class, 'exportPDF'])->name('.export');
+  // Route::get('printPDF', [StatisticsController::class, 'printPDF'])->name('print.pdf');
 });

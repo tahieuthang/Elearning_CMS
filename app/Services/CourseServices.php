@@ -10,6 +10,7 @@ use App\Models\CourseCategoryPivot;
 use App\Models\CourseTag;
 use App\Models\HotContent;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -619,15 +620,15 @@ class CourseServices
       $isBought = Order::where([
         ['customer_id', $customerInfo->id],
         ['status', config('constants.order_status.completed')]
-      ])->with(['courses'])
-        ->whereHas('courses', function ($q) use ($id) {
-          $q->where('courses.id', $id)
-            ->where('status', config('constants.course_status_by_text.active'));
-        })
+      ])
+      ->whereHas('courses', function ($q) use ($id) {
+        $q->where('courses.id', $id)
+        ->where('status', config('constants.course_status_by_text.active'));
+      })
         ->exists();
       if($isBought) {
         $courseDetail->is_bought = $isBought;
-      } 
+      }
       $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
     }
 

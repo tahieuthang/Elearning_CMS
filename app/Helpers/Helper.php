@@ -74,7 +74,7 @@ class Helper
 
     public static function generateCodeUlid($prefix, $index)
     {
-        $ulid = Ulid::generate()->getTime();
+        $ulid = Ulid::generate()->toString();
         $code = $prefix . $ulid . $index;
 
         return $code;

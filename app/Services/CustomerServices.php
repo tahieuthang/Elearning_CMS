@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Yajra\Datatables\Datatables;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Log;
 
 class CustomerServices
 {
@@ -74,19 +75,21 @@ class CustomerServices
 
   public function verify($code)
   {
+    Log::info("Received code: $code");
     $customer = Customer::where('confirmation_code', $code)->first();
     if ($customer) {
-      if ($customer->status === Config::get('constants.customer_status_enable')) {
-        throw new ConflictHttpException(__('message.customer_has_been_activated'));
-      }
-      // ACTIVE
-      $customer->update([
-        'status' => Config::get('constants.customer_status_enable'),
-        'email_verified_at' => Carbon::now(),
-        'confirmation_code' => null
-      ]);
+        Log::info("Customer found: " . $customer->email);
+        if ($customer->status === \Config::get('constants.customer_status_enable')) {
+            throw new ConflictHttpException(__('message.customer_has_been_activated'));
+        }
+        // ACTIVE
+        $customer->update([
+            'status' => \Config::get('constants.customer_status_enable'),
+            'email_verified_at' => Carbon::now(),
+            'confirmation_code' => null
+        ]);
     } else {
-      throw new NotFoundHttpException(__('message.not_exist_confirmation_code'));
+        throw new NotFoundHttpException(__('message.not_exist_confirmation_code'));
     }
   }
 
@@ -115,7 +118,13 @@ class CustomerServices
 
   public function getOrderById($id)
   {
-    $order = Order::with('orderItems')->where('order_id', $id)->first();
+    $order = Order::with('courses')->where('id', $id)->first();
+    return $order;
+  }
+
+  public function getOrderByCode($code)
+  {
+    $order = Order::with('courses')->where('code', $code)->first();
     return $order;
   }
 }

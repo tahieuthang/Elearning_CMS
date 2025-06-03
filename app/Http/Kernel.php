@@ -18,6 +18,7 @@ class Kernel extends HttpKernel
     'api' => [
       'throttle:api',
       \Illuminate\Routing\Middleware\SubstituteBindings::class,
+      \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
       'auth.jwt', // Thêm middleware auth.jwt cho API
     ],
     \Illuminate\Http\Middleware\HandleCors::class,

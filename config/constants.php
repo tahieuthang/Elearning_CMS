@@ -56,7 +56,7 @@ return [
   'vnpay_payment_academy_return_url' => env('VNPAY_PAYMENT_ACADEMY_RETURN_URL'),
 
   'vnpay_order_type' => '190000', // 190000 Giải trí & Đào tạo
-  'vnpay_lifetime' => 10, // minute
+  'vnpay_lifetime' => 15, // minute
   'job_status' => [
     'inProgress' => 1,
     'success' => 2,

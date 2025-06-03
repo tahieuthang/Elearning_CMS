@@ -46,6 +46,7 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
   Route::group(['prefix' => 'customer'], function () {
     Route::get('/orders', [CustomerController::class, 'getOrders']);
     Route::get('/orders/{id}', [CustomerController::class, 'getOrderById']);
+    Route::get('/orders_code/{code}', [CustomerController::class, 'getOrderByCode']);
   });
 });
 
@@ -67,8 +68,8 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
 
 // COURSE FOR CUSTOMER
 Route::group(['prefix' => 'course'], function () {
-  Route::get('/list', [CourseController::class, 'getCourseList']);
-  Route::get('/detail/{id}', [CourseController::class, 'getCourseDetail']);
+  Route::get('/list', [CourseController::class, 'getCourseList']); //ok
+  Route::get('/detail/{id}', [CourseController::class, 'getCourseDetail']); //ok
   Route::get('/top', [CourseController::class, 'getCourseTop']); //ok
 });
 
@@ -86,5 +87,5 @@ Route::group(['prefix' => 'payment'], function () {
 });
 
 Route::group(['prefix' => 'video', 'as' => 'video'], function () {
-  Route::get('/vimeo/{id}', [VideoController::class, 'getDetailVimeo']); // chưa làm
+  Route::get('/vimeo/{id}', [VideoController::class, 'getDetailVimeo']); // ok
 });

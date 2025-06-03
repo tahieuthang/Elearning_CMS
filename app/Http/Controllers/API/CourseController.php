@@ -10,6 +10,7 @@ use App\Helpers\Helper;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Log;
 
 class CourseController extends Controller
 {

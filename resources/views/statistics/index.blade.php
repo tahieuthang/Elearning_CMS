@@ -18,9 +18,12 @@
 
 <div class="container py-6">
   <div class="text-right mb-3">
-    <button id="exportPDF" class="btn btn-primary">
-      <i class="fas fa-file-pdf"></i> Xuất PDF
-    </button>
+    <form action="{{ route('statistics.export') }}" method="POST">
+      {{ csrf_field() }}
+      <button class="btn btn-primary">
+        <i class="fas fa-file-pdf"></i> Xuất PDF
+      </button>
+    </form>
   </div>
 
   <!-- Hàng đầu: 4 ô thống kê -->
@@ -43,7 +46,7 @@
       <div class="card shadow-sm p-3 text-center">
         <i class="fas fa-dollar-sign fa-3x text-warning"></i>
         <h5 class="mt-2">Doanh thu</h5>
-        <h3 class="font-weight-bold">{{ App\Helpers\Helper::convertMoney($data['revenue']) }}</h3>
+        <h3 class="font-weight-bold">{{ Helper::convertMoney($data['revenue']) }}</h3>
       </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
@@ -95,8 +98,8 @@
               <td class="cell"><img style="width: 120px" src="{{ $course->thumbnail }}" /></td>
               <td class="cell"><span class="truncate">{{ $course->title }}</span></td>
               <td class="cell">{{ $course->author }}</td>
-              <td class="cell"><del>{{ App\Helpers\Helper::convertMoney($course->original_price) }}</del></td>
-              <td class="cell"><strong>{{ App\Helpers\Helper::convertMoney($course->original_price) }}</strong></td>
+              <td class="cell"><del>{{ Helper::convertMoney($course->original_price) }}</del></td>
+              <td class="cell"><strong>{{ Helper::convertMoney($course->sale_off_price) }}</strong></td>
               <td class="cell">{{ $course->items_count }}</td>
             </tr>
             @endforeach
@@ -156,12 +159,12 @@
             },
             ticks: {
               callback: function(value) {
-                return value; // Hiển thị giá trị mà không cần thêm "triệu"
+                return value;
               },
               stepSize: 10,
             },
             min: 0,
-            max: maxYValue // Giá trị tối đa ban đầu
+            max: maxYValue
           },
           x: {
             title: {
@@ -206,7 +209,7 @@
               text: 'Tài khoản'
             },
             min: 0,
-            max: 100 // Giá trị tối đa ban đầu
+            max: 100
           },
           x: {
             title: {
@@ -271,47 +274,6 @@
         }
       }
     });
-
-    document.getElementById("exportPDF").addEventListener("click", function() {
-      let imgData = [];
-      const chartIds = ['revenueChart', 'revenueByCategories', 'monthlyCustomer'];
-
-      // Tạo một mảng các promises với imgData được truyền vào
-      const promises = chartIds.map(chartId => {
-        return exportChartToPDF(chartId, imgData); // Truyền imgData vào đây
-      });
-
-      Promise.all(promises).then(() => {
-        // Gọi fetch để gửi dữ liệu ảnh
-        fetch('/export-pdf', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              image: imgData,
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log('Success', data);
-          })
-          .catch(error => {
-            console.error('Error:', error);
-          });
-      });
-    });
-
-    function exportChartToPDF(chartId, imgData) {
-      return html2canvas(document.querySelector(`#${chartId}`)).then(function(canvas) {
-        let imgChart = canvas.toDataURL('image/png'); // Sửa thành toDataURL
-        imgData.push(imgChart); // Thêm ảnh vào imgData
-      });
-    }
-
-
-
-
   })
 </script>
 @endsection

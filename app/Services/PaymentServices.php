@@ -29,39 +29,37 @@ class PaymentServices
     )
       ->join('courses', 'courses.id', '=', 'carts.course_id')
       ->where('customer_id', auth('customer')->user()->id)
-      ->whereIn('carts.id', $request->cart_id)
       ->get()
       ->toArray();
-
     if (count($cartContent)) {
       $amount = array_reduce(
-        $cartContent,
-        function ($amount, $item) {
-          $amount += $item['price'] * $item['quantity'];
-          return $amount;
-        },
-        0
+          $cartContent,
+          function ($amount, $item) {
+              $amount += $item['price'] * $item['quantity'];
+              return $amount;
+          },
+          0
       );
       // CREATE PROCESSING ORDER
       $order = Order::create([
-        'code' => Order::generateCode('OD-', null, 'code'),
-        'amount' => (int)$amount,
-        'customer_id' => auth('customer')->user()->id,
-        'payment_method' => Config::get('constants.payment_method.vnpay'),
-        'payment_time' => null,
-        'status' => Config::get('constants.order_status.processing'),
+          'code' => Order::generateCode('OD-', null, 'code'),
+          'amount' => (int)$amount,
+          'customer_id' => auth('customer')->user()->id,
+          'payment_method' => Config::get('constants.payment_method.vnpay'),
+          'payment_time' => null,
+          'status' => Config::get('constants.order_status.processing'),
       ]);
       $orderItems = [];
       foreach ($cartContent as $item) {
-        $orderItems[] = [
-          'order_id' => $order->id,
-          'course_id' => $item['course_id'],
-          'course_title' => $item['course_title'],
-          'quantity' => $item['quantity'],
-          'price' => $item['price'],
-          'created_at' => Carbon::now(),
-          'updated_at' => Carbon::now(),
-        ];
+          $orderItems[] = [
+              'order_id' => $order->id,
+              'course_id' => $item['course_id'],
+              'course_title' => $item['course_title'],
+              'quantity' => $item['quantity'],
+              'price' => $item['price'],
+              'created_at' => Carbon::now(),
+              'updated_at' => Carbon::now(),
+          ];
       }
       // CREATE ORDER ITEM
       OrderItem::insert($orderItems);
@@ -69,12 +67,12 @@ class PaymentServices
       Cart::where('customer_id', auth('customer')->user()->id)->delete();
       // CREATE PAYMENT TRANSACTION
       PaymentTransaction::create([
-        'code' => PaymentTransaction::generateCode('PT-', null, 'code'),
-        'order_id' => $order->id,
-        'customer_id' => auth('customer')->user()->id,
-        'amount' => $order->amount,
-        'payment_method' => $order->payment_method,
-        'status' => Config::get('constants.payment_transaction_status.waiting_confirm'),
+          'code' => PaymentTransaction::generateCode('PT-', null, 'code'),
+          'order_id' => $order->id,
+          'customer_id' => auth('customer')->user()->id,
+          'amount' => $order->amount,
+          'payment_method' => $order->payment_method,
+          'status' => Config::get('constants.payment_transaction_status.waiting_confirm'),
       ]);
       // CREATE URL PAYMENT VNPAY
       $vnp_Url = Config::get('constants.vnpay_payment_url');
@@ -91,19 +89,19 @@ class PaymentServices
       //Add Params of 2.0.1 Version
       $vnp_ExpireDate = Carbon::now()->addMinutes(Config::get('constants.vnpay_lifetime'))->format('YmdHis');
       $inputData = array(
-        'vnp_Version' => '2.1.0',
-        'vnp_TmnCode' => $vnp_TmnCode,
-        'vnp_Amount' => $vnp_Amount,
-        'vnp_Command' => 'pay',
-        'vnp_CreateDate' => date('YmdHis'),
-        'vnp_CurrCode' => 'VND',
-        'vnp_IpAddr' => $vnp_IpAddr,
-        'vnp_Locale' => $vnp_Locale,
-        'vnp_OrderInfo' => $vnp_OrderInfo,
-        'vnp_OrderType' => $vnp_OrderType,
-        'vnp_ReturnUrl' => $vnp_Returnurl,
-        'vnp_TxnRef' => $vnp_TxnRef,
-        'vnp_ExpireDate' => $vnp_ExpireDate,
+          'vnp_Version' => '2.1.0',
+          'vnp_TmnCode' => $vnp_TmnCode,
+          'vnp_Amount' => $vnp_Amount,
+          'vnp_Command' => 'pay',
+          'vnp_CreateDate' => date('YmdHis'),
+          'vnp_CurrCode' => 'VND',
+          'vnp_IpAddr' => $vnp_IpAddr,
+          'vnp_Locale' => $vnp_Locale,
+          'vnp_OrderInfo' => $vnp_OrderInfo,
+          'vnp_OrderType' => $vnp_OrderType,
+          'vnp_ReturnUrl' => $vnp_Returnurl,
+          'vnp_TxnRef' => $vnp_TxnRef,
+          'vnp_ExpireDate' => $vnp_ExpireDate,
       );
 
       // LOG DATA SEND TO VNPAY
@@ -116,26 +114,26 @@ class PaymentServices
       $i = 0;
       $hashdata = '';
       foreach ($inputData as $key => $value) {
-        if ($i == 1) {
-          $hashdata .= '&' . urlencode($key) . '=' . urlencode($value);
-        } else {
-          $hashdata .= urlencode($key) . '=' . urlencode($value);
-          $i = 1;
-        }
-        $query .= urlencode($key) . '=' . urlencode($value) . '&';
+          if ($i == 1) {
+              $hashdata .= '&' . urlencode($key) . '=' . urlencode($value);
+          } else {
+              $hashdata .= urlencode($key) . '=' . urlencode($value);
+              $i = 1;
+          }
+          $query .= urlencode($key) . '=' . urlencode($value) . '&';
       }
 
       $vnp_Url = $vnp_Url . '?' . $query;
       if (isset($vnp_HashSecret)) {
-        $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
-        $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
-        return [
-          'payment_url' => $vnp_Url
-        ];
+          $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+          $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+          return [
+              'payment_url' => $vnp_Url
+          ];
       }
     }
     return [
-      'payment_url' => ''
+        'payment_url' => ''
     ];
   }
 

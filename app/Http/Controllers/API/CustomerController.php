@@ -373,4 +373,14 @@ class CustomerController extends Controller
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
     }
   }
+
+  public function getOrderByCode(Request $request)
+  {
+    try {
+        $data = $this->customerServices->getOrderByCode($request->code);
+        return $this->successResponse($data);
+    } catch (\Exception $e) {
+        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+    }
+  }
 }
