@@ -19,8 +19,8 @@ return [
 
   'allowed_methods' => ['*'], // Các HTTP method được phép (GET, POST, PUT,...)
 
-  'allowed_origins' => ['http://localhost:5173'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
-
+  'allowed_origins' => ['https://elearning-landing.netlify.app'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
+  
   'allowed_origins_patterns' => [], // Mẫu domain cho phép (regex nếu cần)
 
   'allowed_headers' => ['*'], // Các header được phép
@@ -29,5 +29,5 @@ return [
 
   'max_age' => 0, // Thời gian cache (giây)
 
-  'supports_credentials' => true, // Có cho phép cookie hoặc xác thực không
+  'supports_credentials' => false, // Có cho phép cookie hoặc xác thực không
 ];
