@@ -21,6 +21,8 @@ return [
 
   'allowed_origins' => ['https://elearning-landing.netlify.app'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
   
+  // 'allowed_origins' => ['http://localhost:5173'], 
+
   'allowed_origins_patterns' => [], // Mẫu domain cho phép (regex nếu cần)
 
   'allowed_headers' => ['*'], // Các header được phép

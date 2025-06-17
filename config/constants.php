@@ -62,4 +62,12 @@ return [
     'success' => 2,
     'fail' => 3,
   ],
+
+  'level_rate' => [
+    1 => 'Rất tệ',
+    2 => 'Tệ',
+    3 => 'Bình thường',
+    4 => 'Hay',
+    5 => 'Tuyệt vời',
+  ],
 ];

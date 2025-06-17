@@ -71,6 +71,11 @@ Route::group(['prefix' => 'course'], function () {
   Route::get('/list', [CourseController::class, 'getCourseList']); //ok
   Route::get('/detail/{id}', [CourseController::class, 'getCourseDetail']); //ok
   Route::get('/top', [CourseController::class, 'getCourseTop']); //ok
+  Route::get('/reiview/{id}', [CourseController::class, 'getReviewByCourse']);
+
+  Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
+    Route::post('/review/add/{id}', [CourseController::class, 'addReviews']);
+  });
 });
 
 // PAYMENT VNPAY

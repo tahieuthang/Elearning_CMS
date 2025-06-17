@@ -11,6 +11,8 @@ use App\Models\CourseTag;
 use App\Models\HotContent;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Review;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -649,6 +651,68 @@ class CourseServices
         'status' => false,
         'message' => $e->getMessage()
       ];
+    }
+  }
+
+  public function getReviewByCourse($id, $request) {
+    try {
+      $page = !empty($request->page) ? $request->page : config('constants.page');
+      $perPage = !empty($request->per_page) ? $request->per_page : config('constants.per_page');
+
+      $listReviewByCourse = Review::with(['customer', 'course'])->where('course_id', $id);
+      $countReviews = Review::where('course_id', $id)->count();
+     
+      $numberRate = range(1, 5);
+      $rawRateData = DB::table('reviews')->select('rate', DB::raw('count(*) as total'))->where('course_id', $id)
+      ->groupBy('rate')->orderBy('rate', 'desc')->pluck('total', 'rate');
+      $rateData = collect();
+      $totalRate = 0;
+      $totalPoint = 0;
+      
+      foreach($numberRate as $value) {
+        $total = $rawRateData[$value] ?? 0;
+        $percent = $countReviews > 0 ? round(($total / $countReviews) * 100, 2) : 0;
+        $rateData->push((object)[
+          'rate' => $value,
+          'total' => $total,
+          'percent' => $percent,
+        ]);
+        $totalRate += $total;
+        $totalPoint += $value * $total;
+      };
+
+      $averageRatePoint = $totalRate > 0 ? round($totalPoint / $totalRate, 2) : 0;
+      return [
+        'list' => $listReviewByCourse->paginate($perPage, ['*'], '', $page),
+        'rate' => $rateData,
+        'average' => $averageRatePoint
+      ];
+    } catch (\Exception $e) {
+      return [
+        'status' => false,
+        'message' => $e->getMessage()
+      ];
+    }
+  }
+
+  public function addReviews($data)
+  {
+    $userId = auth('customer')->user()->id;
+    $isBought = Order::where([
+      ['customer_id', $userId],
+      ['status', config('constants.order_status.completed')]
+    ])
+    ->whereHas('courses', function ($q) use ($data) {
+      $q->where('courses.id', $data['course_id'])
+      ->where('status', config('constants.course_status_by_text.active'));;
+    })->exists();
+    if($isBought) {
+      return Review::create([
+        'course_id' => $data['course_id'],
+        'customer_id' => $userId,
+        'comment' => $data['comment'],
+        'rate' => $data['rate']
+      ]);
     }
   }
 }

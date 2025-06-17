@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Services\CourseServices;
 use Illuminate\Http\Request;
 use App\Helpers\Helper;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -70,5 +71,44 @@ class CourseController extends Controller
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     }
+  }
+
+  public function getReviewByCourse($id, Request $request) {
+    try {
+      $data = $this->courseServices->getReviewByCourse($id, $request);
+      return $this->successResponse($data);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
+
+  public function addReviews($id, Request $request)
+  {
+    DB::beginTransaction();
+    try {
+      $request->validate([
+        "comment" => 'required',
+        "rate" => 'required'
+      ]);
+      $this->courseServices->addReviews([
+        'course_id' => $id,
+        'comment' => $request->comment,
+        'rate' => $request->rate
+      ]);
+      DB::commit();
+      return $this->createdSuccessResponse();
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return response()->json([
+        'status' => 422,
+        'error' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422); 
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    } 
   }
 }
