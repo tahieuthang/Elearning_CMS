@@ -38,5 +38,8 @@ RUN chown -R www-data:www-data /var/www \
 # Cổng mặc định Laravel
 EXPOSE 8000
 
-# Lệnh chạy app
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# Đảm bảo file entrypoint.sh có thể chạy
+RUN chmod +x /var/www/entrypoint.sh
+
+# Dùng entrypoint script
+CMD ["sh", "/var/www/entrypoint.sh"]
