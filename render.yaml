@@ -41,8 +41,7 @@ services:
       - key: APP_KEY
         fromService:
           name: laravel-backend
-          type: envVar
-          key: APP_KEY
+          envVarKey: APP_KEY
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
