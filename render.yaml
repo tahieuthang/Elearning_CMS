@@ -39,9 +39,7 @@ services:
       - key: APP_ROLE
         value: worker
       - key: APP_KEY
-        fromService:
-          name: laravel-backend
-          envVarKey: APP_KEY
+        value: base64:ecWH72ePJKp6q3DEl/RW1Oxa16OInIPl8SDtRlQSCro=
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
