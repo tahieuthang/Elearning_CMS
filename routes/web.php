@@ -16,10 +16,16 @@ use App\Http\Controllers\PaymentTransactionController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\PermissionMiddleware;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 Route::get('/migrate-now', function () {
-  Artisan::call('migrate', ['--force' => true]);
-  return 'Migration completed!';
+  try {
+      Artisan::call('migrate', ['--force' => true]);
+      return 'Migration completed!';
+  } catch (\Exception $e) {
+      Log::error('Migration failed: ' . $e->getMessage());
+      return response('Migration failed. Check logs.', 500);
+  }
 });
 
 Route::group(['prefix' => 'auth', 'as' => 'auth'], function () {
