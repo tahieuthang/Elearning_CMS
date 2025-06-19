@@ -15,7 +15,12 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentTransactionController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\PermissionMiddleware;
+use Illuminate\Support\Facades\Artisan;
 
+Route::get('/migrate-now', function () {
+  Artisan::call('migrate', ['--force' => true]);
+  return 'Migration completed!';
+});
 
 Route::group(['prefix' => 'auth', 'as' => 'auth'], function () {
   Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('.login'); // ok
