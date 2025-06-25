@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Models\Order;
 use App\Services\CourseServices;
 use Illuminate\Http\Request;
 use App\Helpers\Helper;
@@ -110,5 +111,25 @@ class CourseController extends Controller
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     } 
+  }
+
+  public function getCategoryBestOfUser() {
+    try {
+      $data = $this->courseServices->getCategoryBestOfUser();
+      return $this->successResponse($data);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
+
+  public function getNewCourses($id) {
+    try {
+      $data = $this->courseServices->getNewCourses($id);
+      return $this->successResponse($data);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
   }
 }

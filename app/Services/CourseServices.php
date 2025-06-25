@@ -11,6 +11,7 @@ use App\Models\CourseTag;
 use App\Models\HotContent;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PostCategory;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -713,6 +714,53 @@ class CourseServices
         'comment' => $data['comment'],
         'rate' => $data['rate']
       ]);
+    }
+  }
+  
+  public function getCategoryBestOfUser() {
+    try {
+      $customerId = auth('customer')->user()->id;
+      $courseData = Course::whereHas('orders', function ($q) use ($customerId) {
+        $q->where('status', 3)->where('customer_id', $customerId);
+      })->get();
+      $categoryCount = collect();
+      foreach($courseData as $course) {
+        foreach($course->courseCategories as $category) {
+          $categoryId = $category->id;
+          if($categoryCount->has($categoryId)) {
+            $categoryCount[$categoryId]++;
+          } else {
+            $categoryCount[$categoryId] = 1;
+          }    
+        }
+      }
+      $maxCount = $categoryCount->max();
+      $categoryIdWithMaxCount = $categoryCount->search($maxCount);
+      return $categoryIdWithMaxCount;
+    } catch (\Exception $e) {
+      return [
+        'status' => false,
+        'message' => $e->getMessage()
+      ];
+    }
+  }
+
+  public function getNewCourses($id) {
+    try {
+      $courseNew = Course::with('courseCategories')
+      ->whereHas('courseCategories', function ($q) use ($id) {
+        $q->where('post_categories.id', $id);
+      })
+      ->where('created_at', '>=', now()->subDays(3))
+      ->latest()
+      ->take(5)
+      ->get();
+      return $courseNew;
+    } catch (\Exception $e) {
+      return [
+        'status' => false,
+        'message' => $e->getMessage()
+      ];
     }
   }
 }

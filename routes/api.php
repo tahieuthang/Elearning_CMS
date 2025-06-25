@@ -75,6 +75,8 @@ Route::group(['prefix' => 'course'], function () {
 
   Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
     Route::post('/review/add/{id}', [CourseController::class, 'addReviews']);
+    Route::get('/customer/best-category', [CourseController::class, 'getCategoryBestOfUser']);
+    Route::get('/notifications/new-courses/{id}', [CourseController::class, 'getNewCourses']);
   });
 });
 

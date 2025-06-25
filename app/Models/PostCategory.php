@@ -15,6 +15,11 @@ class PostCategory extends Model
     return $this->belongsToMany(Post::class, 'post_category_pivot');
   }
 
+  public function courseCategories()
+  {
+    return $this->belongsToMany(Course::class, 'course_category_pivot');
+  }
+
   public static function getPostCategoryList()
   {
     return PostCategory::all();

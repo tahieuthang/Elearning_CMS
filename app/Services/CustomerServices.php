@@ -118,7 +118,7 @@ class CustomerServices
 
   public function getOrderById($id)
   {
-    $order = Order::with('courses')->where('id', $id)->first();
+    $order = Order::with('courses.courseCategories')->where('id', $id)->first();
     return $order;
   }
 
