@@ -28,6 +28,10 @@ Route::get('/migrate-now', function () {
   }
 });
 
+Route::get('/health-check', function () {
+  return 'Laravel is running!';
+});
+
 Route::group(['prefix' => 'auth', 'as' => 'auth'], function () {
   Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('.login'); // ok
   Route::post('/postLogin', [AuthController::class, 'postLogin'])->middleware('guest')->name('.postLogin'); // ok
