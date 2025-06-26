@@ -137,7 +137,7 @@ Route::group(['prefix' => 'video', 'as' => 'video', 'middleware' => 'auth'], fun
   Route::get('/vimeo/detail/{id}', [VideoController::class, 'vimeoDetail'])->name('.vimeoDetail');
   Route::get('/process', [VideoController::class, 'processUpload'])->name('.process');
   Route::get('/process/data', [VideoController::class, 'processData'])->name('.processData');
-  Route::get('/vimeo/thumbnail', [VideoController::class, 'fetchVimeoThumbnail'])->name('.vimeoDetail');
+  Route::get('/vimeo/thumbnail', [VideoController::class, 'fetchVimeoThumbnail'])->name('.vimeoThumbnail');
 });
 
 // Quản lý khóa học (còn thêm video vào khóa học + xóa banner, thumbnail )
