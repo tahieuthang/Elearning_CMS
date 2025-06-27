@@ -32,6 +32,18 @@ Route::get('/health-check', function () {
   return 'Laravel is running!';
 });
 
+Route::get('/check-permission', function () {
+  $storage = substr(sprintf('%o', fileperms(storage_path())), -4);
+  $cache = substr(sprintf('%o', fileperms(base_path('bootstrap/cache'))), -4);
+  return response()->json([
+      'storage_permission' => $storage,
+      'cache_permission' => $cache,
+      'storage_writable' => is_writable(storage_path()),
+      'cache_writable' => is_writable(base_path('bootstrap/cache')),
+  ]);
+});
+
+
 Route::group(['prefix' => 'auth', 'as' => 'auth'], function () {
   Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('.login'); // ok
   Route::post('/postLogin', [AuthController::class, 'postLogin'])->middleware('guest')->name('.postLogin'); // ok
