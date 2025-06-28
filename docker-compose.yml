@@ -15,7 +15,7 @@ services:
       - "8000:8000"
     depends_on:
       - mysql
-    command: php-fpm
+    command: php-fpm -y /usr/local/etc/php-fpm.conf -R
 
   nginx:
     image: nginx:alpine
