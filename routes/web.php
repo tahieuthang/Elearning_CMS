@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TagController;
@@ -43,6 +44,13 @@ Route::get('/check-permission', function () {
   ]);
 });
 
+Route::get('/', function () {
+  if (Auth::check()) {
+      return redirect()->route('.home');
+  } else {
+      return redirect()->route('auth.login');
+  }
+});
 
 Route::group(['prefix' => 'auth', 'as' => 'auth'], function () {
   Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('.login'); // ok
