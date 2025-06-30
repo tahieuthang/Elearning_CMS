@@ -118,7 +118,11 @@ class StatisticsController extends Controller
       $categoryName = $category['category_name'];
       $totalRevenueByCategory = $revenueByCategory[$categoryName] ?? 0;
       $category['total_revenue'] = $totalRevenueByCategory / 1000000;
-      $category['percentage'] = ($totalRevenueByCategory / $totalRevenue) * 100;
+      if($totalRevenue != 0) {
+        $category['percentage'] = ($totalRevenueByCategory / $totalRevenue) * 100;
+      } else {
+        $category['percentage'] = 0;
+      }
     }
 
     $monthlyCustomer = array_fill(1, 12, 0);
