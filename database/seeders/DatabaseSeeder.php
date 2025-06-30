@@ -11,16 +11,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call(UserSeeder::class);
-        $this->call(TagSeeder::class);
-        $this->call(CustomerSeeder::class);
-        $this->call(PostCategorySeeder::class);
-        $this->call(PostSeeder::class);
-        $this->call(PostTagSeeder::class);
-        $this->call(PostCategoryPivotSeeder::class);
-        $this->call(RoleSeeder::class);
-        $this->call(UserRoleSeeder::class);
-        $this->call(PermissionSeeder::class);
-        $this->call(RolePermissionSeeder::class);
+        $this->call([
+            UserSeeder::class,
+            TagSeeder::class,
+            CustomerSeeder::class,
+            PostCategorySeeder::class,
+            PostSeeder::class,
+            PostTagSeeder::class,
+            PostCategoryPivotSeeder::class,
+            RoleSeeder::class,
+            UserRoleSeeder::class,
+            PermissionSeeder::class,
+            RolePermissionSeeder::class,
+        ]);
     }
 }
