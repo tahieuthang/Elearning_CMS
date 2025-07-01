@@ -62,7 +62,7 @@ services:
     volumes:
       - ./docker-compose/nginx/ssl/etc:/etc/letsencrypt
       - ./docker-compose/nginx/ssl/certbot:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot \ --email tahieuthang@gmail.com --agree-tos --no-eff-email \ -d elearning-cms.site -d www.elearning-cms.site
+    command: certonly --webroot -w /var/www/certbot --email tahieuthang@gmail.com --agree-tos --no-eff-email -d elearning-cms.site -d www.elearning-cms.site
 
 
 volumes:
