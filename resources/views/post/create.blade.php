@@ -45,12 +45,7 @@
   let isClickedSubmit = false
 
   //   handle upload room image
-  const maxCapacity = {
-    {
-      \
-      Config::get('constants.max_capacity_image_upload')
-    }
-  }
+  const maxCapacity = {{ \Config::get('constants.max_capacity_image_upload') }}
   var meta_token = $("meta[name=csrf-token]");
 
   $("#input-pd").fileinput({
