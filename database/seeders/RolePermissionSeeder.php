@@ -16,10 +16,7 @@ class RolePermissionSeeder extends Seeder
         $roleAdmin = DB::table('roles')->where('role_name', 'Admin')->first();
         if ($roleAdmin) {
             $rolePermissions = DB::table('permissions')
-                                ->where('guard_name', 'role.list')
-                                ->orWhere('guard_name', 'role.edit')
-                                ->orWhere('guard_name', 'role.delete')
-                                ->orWhere('guard_name', 'role.create')->get();
+                                ->whereIn('guard_name', config('constants.permission_list'))->get();
             $dataRolePermissions = [];
             foreach($rolePermissions as $permission) {
                 $dataRolePermissions[] = [
