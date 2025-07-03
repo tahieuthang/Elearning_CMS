@@ -34,13 +34,20 @@
 @stop
 
 @section('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<!-- jQuery trước tiên -->
+<!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script> -->
+
+<!-- jQuery UI nếu có -->
 <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
-<!-- Import JS cho jQuery, Select2 và DataTables -->
+
+<!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+<!-- Select2 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>>
-<script src="{{ asset('ckeditor/ckeditor.js') }}"></script>
+
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
     <!-- FileInput -->
 <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/js/plugins/buffer.min.js" type="text/javascript"></script>
@@ -51,8 +58,9 @@
 <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/js/fileinput.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-fileinput@5.5.0/js/locales/LANG.js"></script>
 <script src="{{ asset('/js/util.js') }}"></script>
-<script type="text/javascript" src="{{ URL::asset('plugins/ckeditor/ckeditor.js') }}"></script>>
+<script src="{{ asset('ckeditor/ckeditor.js') }}"></script>
 <script>
+ 
     const editor = CKEDITOR.replace('content', {
     fileTools_requestHeaders: {
       'X-CSRFToken': '{{ csrf_token() }}',
