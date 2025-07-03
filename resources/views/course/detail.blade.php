@@ -60,8 +60,8 @@
 <script src="{{ asset('/js/util.js') }}"></script>
 <script src="{{ asset('ckeditor/ckeditor.js') }}"></script>
 <script>
- 
-    const editor = CKEDITOR.replace('content', {
+ $(document).ready(function () {
+  const editor = CKEDITOR.replace('content', {
     fileTools_requestHeaders: {
       'X-CSRFToken': '{{ csrf_token() }}',
     },
@@ -504,5 +504,7 @@
       }
     });
   }
+ })
+  
 </script>
 @stop
