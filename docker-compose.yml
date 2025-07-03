@@ -49,7 +49,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: elearning-queue
-    command: php artisan queue:work
+    command: ./start-queue.sh
+    restart: unless-stopped
     volumes:
       - .:/var/www
     depends_on:
