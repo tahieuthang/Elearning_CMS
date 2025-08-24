@@ -59,7 +59,6 @@
             <tr>
               <th>{{__('post.id')}}</th>
               <th>{{__('post.title')}}</th>
-              <th>{{__('post.description')}}</th>
               <th>{{__('post.thumbnail')}}</th>
               <th>{{__('post.post_category')}}</th>
               <th>{{__('post.status')}}</th>
@@ -80,8 +79,9 @@
 @section('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
   $(function() {
@@ -93,11 +93,6 @@
       {
         data: 'title',
         name: 'title',
-        'sortable': false
-      },
-      {
-        data: 'description',
-        name: 'description',
         'sortable': false
       },
       {

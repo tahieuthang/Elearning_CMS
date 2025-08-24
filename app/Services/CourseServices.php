@@ -599,6 +599,7 @@ class CourseServices
       'thumbnail',
       'banner',
       'author',
+      'authorDescription',
       'course_duration',
       'content',
       'status',

@@ -36,6 +36,10 @@
     <div class="card">
       <div class="card-body login-card-body">
         <p class="login-box-msg">{{__('auth.login_title')}}</p>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <p>*username: ADMIN</p>
+          <p>*pass: Admin@123</p>
+        </div>
         @if (Session::has('error'))
         <div class="alert alert-danger alert-dismissible" style="font-size: 14px;">
           <button type="button" class="close" data-dismiss="alert">&times;</button>

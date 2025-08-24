@@ -266,7 +266,7 @@ return [
         ],
         [
             'text'    => 'Quản lý người dùng',
-            'can'     => 'customer.list',
+            // 'can'     => 'customer.list',
             'icon'    => 'fas fa-fw fa-users',
             'submenu' => [
                 [
@@ -276,8 +276,19 @@ return [
             ],
         ],
         [
+            'text'    => 'Quản lý bài viết',
+            // 'can'     => 'post.list',
+            'icon'    => 'fas fa-fw fa-book',
+            'submenu' => [
+                [
+                    'text' => 'Danh sách bài viết',
+                    'url'  => '/posts/list',
+                ],
+            ],
+        ],
+        [
             'text'    => 'Quản lý thẻ',
-            'can'     => 'tag.list',
+            // 'can'     => 'tag.list',
             'icon'    => 'fas fa-fw fa-tag',
             'url'     => '/tag/list',
         ],
@@ -285,11 +296,11 @@ return [
             'text'    => 'Quản lý danh mục',
             'icon'    => 'fas fa-fw fa-list',
             'url'     => '/category/list',
-            'can'     => 'category.list',
+            // 'can'     => 'category.list',
         ],
         [
             'text'    => 'Quản lý đơn hàng',
-            'can' => 'order.list',
+            // 'can' => 'order.list',
             'icon'    => 'fas fa-fw fa-bars',
             'submenu' => [
                 [
@@ -316,17 +327,17 @@ return [
                 [
                     'text' => 'Quản lý tài khoản',
                     'url'  => '/admin/list',
-                    'can'  => 'admin.list',
+                    // 'can'  => 'admin.list',
                 ],
                 [
                     'text' => 'Quản lý vai trò',
                     'url'  => '/role/list',
-                    'can'  => 'role.list',
+                    // 'can'  => 'role.list',
                 ],
                 [
                     'text' => 'Quản lý quyền',
                     'url'  => '/permission/list',
-                    'can'  => 'permission.list',
+                    // 'can'  => 'permission.list',
                 ],
             ],
         ],

@@ -62,7 +62,6 @@
               <th>{{__('course.banner')}}</th>
               <th>{{__('course.author')}}</th>
               <th>{{__('course.course_category')}}</th>
-              <th>{{__('course.course_duration')}}</th>
               <th>{{__('course.original_price')}}</th>
               <th>{{__('course.sale_off_price')}}</th>
               <th class="status">{{__('course.status')}}</th>
@@ -112,12 +111,6 @@
       {
         data: 'courseCategory',
         name: 'course_category',
-        'sortable': false,
-        "searchable": false
-      },
-      {
-        data: 'course_duration',
-        name: 'course_duration',
         'sortable': false,
         "searchable": false
       },

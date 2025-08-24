@@ -2,28 +2,26 @@
 @section('css')
 <style>
   .container {
-    margin-top: 50px;
+    margin-top: 20px;
+    padding: 20px;
   }
-
   #revenueByCategories {
     width: 266px !important;
-    /* 2/3 của 400px */
     height: 266px !important;
-    /* 2/3 của 400px */
     margin: auto;
   }
 </style>
 @endsection
 @section('content')
 
-<div class="container py-6">
-  <div class="text-right mb-3">
+<div class="container py-6 px-3">
+  <!-- <div class="text-right mb-3">
     <button id="exportPDF" class="btn btn-primary">
       <i class="fas fa-file-pdf"></i> Xuất PDF
     </button>
-  </div>
+  </div> -->
 
-  <!-- Hàng đầu: 4 ô thống kê -->
+  <!-- 4 ô thống kê -->
   <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
       <div class="card shadow-sm p-3 text-center">
@@ -55,7 +53,7 @@
     </div>
   </div>
 
-  <!-- Hàng thứ hai: 2 biểu đồ -->
+  <!-- 2 biểu đồ -->
   <div class="row mb-4">
     <div class="col-md-6">
       <div class="card shadow-sm p-3">
@@ -71,10 +69,10 @@
     </div>
   </div>
 
-  <!-- Hàng thứ ba: Di chuyển bảng xuống dưới và giữ box Doanh thu theo danh mục khóa học ở vị trí cũ nhưng sang trái -->
+  <!--  -->
   <div class="row">
-    <div class="col-md-7">
-      <div class="card shadow-sm p-3" style="height: 100%; overflow-y: auto; max-height: 400px;">
+    <div class="col-md-8">
+      <div class="card shadow-sm p-3 overflow-x-hidden" style="height: 100%; overflow-y: auto; max-height: 400px;">
         <h5 class="font-weight-bold">Khóa học được mua nhiều nhất</h5>
         <table class="table table-hover" style="border-collapse: separate; border-spacing: 0 8px;">
           <thead>
@@ -83,7 +81,6 @@
               <th>{{__('course.thumbnail')}}</th>
               <th>{{__('course.title')}}</th>
               <th>{{__('course.author')}}</th>
-              <th>{{__('course.original_price')}}</th>
               <th>{{__('course.sale_off_price')}}</th>
               <th>{{__('course.purchases')}}</th>
             </tr>
@@ -95,7 +92,6 @@
               <td class="cell"><img style="width: 120px" src="{{ $course->thumbnail }}" /></td>
               <td class="cell"><span class="truncate">{{ $course->title }}</span></td>
               <td class="cell">{{ $course->author }}</td>
-              <td class="cell"><del>{{ App\Helpers\Helper::convertMoney($course->original_price) }}</del></td>
               <td class="cell"><strong>{{ App\Helpers\Helper::convertMoney($course->original_price) }}</strong></td>
               <td class="cell">{{ $course->items_count }}</td>
             </tr>
@@ -104,7 +100,7 @@
         </table>
       </div>
     </div>
-    <div class="col-md-5">
+    <div class="col-md-4">
       <div class="card shadow-sm p-3" style="height: 100%;">
         <h5 class="font-weight-bold">Doanh thu theo danh mục khóa học</h5>
         <canvas id="revenueByCategories" width="400" height="400"></canvas>
@@ -276,13 +272,11 @@
       let imgData = [];
       const chartIds = ['revenueChart', 'revenueByCategories', 'monthlyCustomer'];
 
-      // Tạo một mảng các promises với imgData được truyền vào
       const promises = chartIds.map(chartId => {
-        return exportChartToPDF(chartId, imgData); // Truyền imgData vào đây
+        return exportChartToPDF(chartId, imgData);
       });
 
       Promise.all(promises).then(() => {
-        // Gọi fetch để gửi dữ liệu ảnh
         fetch('/export-pdf', {
             method: 'POST',
             headers: {
@@ -304,14 +298,10 @@
 
     function exportChartToPDF(chartId, imgData) {
       return html2canvas(document.querySelector(`#${chartId}`)).then(function(canvas) {
-        let imgChart = canvas.toDataURL('image/png'); // Sửa thành toDataURL
-        imgData.push(imgChart); // Thêm ảnh vào imgData
+        let imgChart = canvas.toDataURL('image/png');
+        imgData.push(imgChart); 
       });
     }
-
-
-
-
   })
 </script>
 @endsection

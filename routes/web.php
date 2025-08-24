@@ -137,18 +137,6 @@ Route::group(['prefix' => 'category', 'as' => 'category', 'middleware' => 'auth'
 });
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 
-// Quản lý banner
-// Route::group(['prefix' => 'banner', 'as' => 'banner', 'middleware' => 'auth'], function () {
-//   Route::get('/list', 'BannerController@list')->middleware('permission-check:event.list')->name('.list');
-//   Route::get('/anyData', 'BannerController@anyData')->name('.anyData');
-//   Route::get('/create', 'BannerController@create')->middleware('permission-check:banner.create')->name('.create');
-//   Route::post('/update/{id}', 'BannerController@updateBanner')->name('.updateBanner');
-//   Route::post('/createTag', 'BannerController@createBanner')->name('.createBanner');
-//   Route::get('/detail/{id}', 'BannerController@detail')->middleware('permission-check:banner.edit')->name('.detail');
-//   Route::post('/delete-img/{id}', 'BannerController@deleteImage')->name('.image.delete');
-//   Route::delete('/delete/{id}', 'BannerController@deleteBanner')->name('.delete');
-// });
-
 // Quản lý video (ok hết, về sau bổ sung thêm xóa video là dc)
 Route::group(['prefix' => 'video', 'as' => 'video', 'middleware' => 'auth'], function () {
   Route::get('/list', [VideoController::class, 'list'])->middleware(PermissionMiddleware::class . ':video.list')->name('.list');

@@ -29,9 +29,6 @@
                 <th>{{__('customer.name')}}</th>
                 <th>{{__('customer.email')}}</th>
                 <th>{{__('customer.phone')}}</th>
-                <th>{{__('customer.avatar_2d')}}</th>
-                <th>{{__('customer.rank')}}</th>
-                <th>{{__('customer.money')}}</th>
                 <th class="status">{{__('customer.status')}}</th>
                 <th>{{__('customer.created_at')}}</th>
                 <th>{{__('customer.action')}}</th>
@@ -78,19 +75,6 @@
         {
           data: 'phone',
           name: 'phone',
-        },
-        {
-          data: 'image2D',
-          name: 'avatar_2d',
-          'sortable': false
-        },
-        {
-          data: 'rank',
-          name: 'rank'
-        },
-        {
-          data: 'money',
-          name: 'money'
         },
         {
           data: 'customerStatus',
