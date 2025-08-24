@@ -137,9 +137,9 @@
         }
       },
       initialPreview: initialPreview,
-      initialPreviewAsData: true, // identify if you are sending preview data only and not the raw markup,
+      initialPreviewAsData: true,
       initialPreviewConfig: initialPreviewConfig,
-      initialPreviewFileType: 'image', // image is the default and can be overridden in config below
+      initialPreviewFileType: 'image',
     }).on('fileuploaded', function(e, params) {
       console.log('File uploaded params', params);
     })
