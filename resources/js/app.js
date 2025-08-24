@@ -1,7 +1,6 @@
 import 'bootstrap';
 import * as FilePond from 'filepond';
 import $ from 'jquery';
-import $ from 'jquery';
 window.$ = window.jQuery = $;
 import DataTable from 'datatables.net';
 window.DataTable = DataTable;
