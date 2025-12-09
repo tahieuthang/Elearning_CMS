@@ -19,4 +19,5 @@ WORKDIR /var/www
 COPY . .
 
 RUN composer install && chmod -R 775 storage bootstrap/cache
+RUN chmod +x start-queue.sh
 RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memlimit.ini

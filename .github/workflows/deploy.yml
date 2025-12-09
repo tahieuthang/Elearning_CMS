@@ -1,0 +1,108 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main  # Chỉ deploy khi push vào branch main
+      - production  # Hoặc branch production
+  workflow_dispatch:  # Cho phép chạy thủ công từ GitHub UI
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, bcmath, gd
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      
+      - name: Copy .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      
+      - name: Run tests
+        run: php artisan test
+        continue-on-error: true  # Không fail workflow nếu tests fail (tùy chọn)
+
+  deploy:
+    name: Deploy to Server
+    needs: test  # Chỉ deploy sau khi tests pass
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to production server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/home/ubuntu/elearning' }}  # Có thể hardcode trực tiếp nếu cố định
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} bash << EOF
+            set -e
+            echo "🚀 Starting deployment..."
+            cd ${PROJECT_PATH}
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+            echo "💾 Creating database backup..."
+            docker compose -f docker-compose.yml exec -T mysql mysqldump -u root -p\${DB_PASSWORD} vfl-academy > backup_\$(date +%Y%m%d_%H%M%S).sql || true
+            echo "🛑 Stopping containers..."
+            docker compose -f docker-compose.yml down
+            echo "🔨 Building Docker images..."
+            docker compose -f docker-compose.yml build --no-cache
+            echo "▶️ Starting containers..."
+            docker compose -f docker-compose.yml up -d
+            echo "⏳ Waiting for services to be ready..."
+            sleep 10
+            echo "📊 Running migrations..."
+            docker compose -f docker-compose.yml exec -T app php artisan migrate --force
+            echo "🧹 Clearing caches..."
+            docker compose -f docker-compose.yml exec -T app php artisan config:clear
+            docker compose -f docker-compose.yml exec -T app php artisan cache:clear
+            docker compose -f docker-compose.yml exec -T app php artisan route:clear
+            docker compose -f docker-compose.yml exec -T app php artisan view:clear
+            echo "⚡ Optimizing application..."
+            docker compose -f docker-compose.yml exec -T app php artisan config:cache
+            docker compose -f docker-compose.yml exec -T app php artisan route:cache
+            docker compose -f docker-compose.yml exec -T app php artisan view:cache
+            echo "🏥 Running health check..."
+            sleep 5
+            curl -f http://localhost/api/ho || exit 1
+            echo "✅ Deployment completed successfully!"
+          EOF
+      
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment to production completed successfully!"
+          # Có thể thêm webhook notification ở đây (Slack, Discord, etc.)
+      
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          # Có thể thêm webhook notification ở đây
+

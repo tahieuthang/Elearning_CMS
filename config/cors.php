@@ -19,13 +19,13 @@ return [
 
   'allowed_methods' => ['*'], // Các HTTP method được phép (GET, POST, PUT,...)
 
-  'allowed_origins' => ['https://elearning-landing.netlify.app'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
+  'allowed_origins' => ['https://elearning-landing.netlify.app', 'http://localhost:5173'], // Domain được phép truy cập (thay '*' bằng domain cụ thể nếu cần)
   
   // 'allowed_origins' => ['http://localhost:5173'], 
 
   'allowed_origins_patterns' => [], // Mẫu domain cho phép (regex nếu cần)
 
-  'allowed_headers' => ['*'], // Các header được phép
+  'allowed_headers' => ['*', 'x-redirect-on-401'], // Các header được phép (bao gồm custom header x-redirect-on-401)
 
   'exposed_headers' => [], // Các header được phép hiển thị ở client
 
