@@ -14,18 +14,25 @@ class Kernel extends HttpKernel
    *
    * @var array<int, class-string|string>
    */
+  // Laravel 11 tự động thêm HandleCors vào global middleware
+  // Không cần khai báo ở đây nữa
+  protected $middleware = [
+    // \Illuminate\Http\Middleware\HandleCors::class, // Đã được Laravel 11 tự động thêm
+  ];
+
   protected $middlewareGroups = [
     'api' => [
       'throttle:api',
       \Illuminate\Routing\Middleware\SubstituteBindings::class,
       \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-      'auth.jwt', // Thêm middleware auth.jwt cho API
+      // Không apply auth.jwt cho tất cả API routes - chỉ apply cho routes cần thiết trong routes/api.php
+      // 'auth.jwt', // Đã được apply riêng cho từng route group trong routes/api.php
     ],
-    \Illuminate\Http\Middleware\HandleCors::class,
   ];
   protected $routeMiddleware = [
     'auth' => \App\Http\Middleware\Authenticate::class,
     'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+    'auth.jwt' => \App\Http\Middleware\JWTVerifyCustomer::class, // Đăng ký auth.jwt middleware
     'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
     'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
     'can' => \Illuminate\Auth\Middleware\Authorize::class,
@@ -38,8 +45,4 @@ class Kernel extends HttpKernel
     // 'permission-check' => \App\Http\Middleware\PermissionMiddleware::class,
     // 'custom.logs' => \App\Http\Middleware\CustomLogs::class,
   ];
-
-  // protected $routeMiddleware = [
-  //   'jwt.verify-customer' => \App\Http\Middleware\JWTVerifyCustomer::class,
-  // ];
 }

@@ -15,6 +15,11 @@ class JWTVerifyCustomer
 {
   public function handle(Request $request, Closure $next)
   {
+    // Skip JWT verification cho OPTIONS request (CORS preflight)
+    if ($request->getMethod() === 'OPTIONS') {
+      return $next($request);
+    }
+
     if (!auth('customer')->check()) {
       return response()->json([
         'errorCode' => ResponseCode::$UNAUTHORIZED,
