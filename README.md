@@ -1,529 +1,339 @@
-# 🎓 E-Learning CMS Admin – Laravel 11
+# 🎓 E-Learning CMS - Backend System
 
-Đây là mã nguồn back-end quản lý nội dung (CMS) cho một nền tảng học trực tuyến. Dự án sử dụng Laravel 11, cho phép quản trị viên thêm/sửa/xoá khóa học, bài học và thực hiện upload video lên Vimeo thông qua hàng đợi (`Queue Job`).
+> Hệ thống quản lý nội dung học trực tuyến (CMS) được xây dựng bằng Laravel 11, cung cấp RESTful API và Admin Panel để quản lý khóa học, bài học, người dùng và thanh toán.
+
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?style=flat&logo=php&logoColor=white)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-20.10+-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+
+---
+
+## 📋 Mục lục
+
+- [Giới thiệu](#-giới-thiệu)
+- [Tính năng](#-tính-năng)
+- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
+- [Cấu trúc dự án](#-cấu-trúc-dự-án)
+- [Cài đặt và Chạy](#-cài-đặt-và-chạy)
+- [API Documentation](#-api-documentation)
+- [Kiến trúc](#-kiến-trúc)
+- [Dự định cải tiến](#-dự-định-cải-tiến)
+- [Tài liệu tham khảo](#-tài-liệu-tham-khảo)
+
+---
+
+## 🎯 Giới thiệu
+
+**E-Learning CMS** là một hệ thống backend hoàn chỉnh cho nền tảng học trực tuyến, bao gồm:
+
+- **CMS Admin Panel**: Giao diện web quản trị để quản lý nội dung, khóa học, người dùng
+- **RESTful API**: API đầy đủ cho frontend/mobile app với JWT authentication
+- **Payment Integration**: Tích hợp VNPAY cho thanh toán trực tuyến
+- **Video Management**: Upload và quản lý video qua Vimeo API với Queue Jobs
+
+Dự án được xây dựng theo kiến trúc **MVC** và **Service Layer Pattern**, đảm bảo code dễ maintain và mở rộng.
+
+---
+
+## ✨ Tính năng
+
+### 🔐 Authentication & Authorization
+- ✅ Multi-guard authentication (Admin session-based, Customer JWT-based)
+- ✅ Role-based access control (RBAC) với Spatie Permission
+- ✅ Email verification cho customer
+- ✅ Password reset functionality
+- ✅ JWT token authentication cho API
+
+### 📚 Course Management
+- ✅ CRUD operations cho khóa học
+- ✅ Quản lý categories và tags
+- ✅ Upload thumbnail và banner
+- ✅ Rich text editor (CKEditor) cho nội dung
+- ✅ Quản lý video episodes (drag & drop sắp xếp)
+- ✅ Upload video lên Vimeo qua Queue Jobs
+- ✅ Course status management (active/private)
+
+### 👥 User Management
+- ✅ Quản lý admin users với permissions
+- ✅ Quản lý customers
+- ✅ Customer profile management
+- ✅ Customer achievements và statistics
+
+### 🛒 E-Commerce Features
+- ✅ Shopping cart functionality
+- ✅ Order management
+- ✅ Payment integration (VNPAY)
+- ✅ Transaction history
+- ✅ Order status tracking
+
+### 📝 Content Management
+- ✅ Blog/Post management
+- ✅ Category và tag system
+- ✅ Hot content management
+- ✅ Review và rating system
+
+### 📊 Admin Dashboard
+- ✅ Statistics và analytics
+- ✅ DataTables với server-side processing
+- ✅ Advanced search và filtering
+- ✅ Export data (PDF generation)
+
+### 🎥 Video Management
+- ✅ Vimeo API integration
+- ✅ Background video upload (Queue Jobs)
+- ✅ Video metadata management
+- ✅ Video preview và thumbnail
+
+---
 
 ## 🚀 Công nghệ sử dụng
 
-- Laravel 11 (PHP 8.2)
-- MySQL 8.0
-- Nginx
-- Docker & Docker Compose
-- Vimeo API
-- VNPAY
-- Laravel Queue Job
+### Backend Framework & Core
+- **Laravel 11** - PHP Framework
+- **PHP 8.2** - Programming Language
+- **MySQL 8.0** - Database
+- **Nginx** - Web Server
 
-## 📋 Yêu cầu hệ thống
+### Laravel Packages
+- **tymon/jwt-auth** - JWT Authentication cho API
+- **spatie/laravel-permission** - Role & Permission management
+- **yajra/laravel-datatables** - Server-side DataTables
+- **barryvdh/laravel-dompdf** - PDF generation
+- **vimeo/laravel** - Vimeo API integration
+- **laravel/sanctum** - API token authentication
 
+### Frontend Technologies (Admin Panel)
+- **jQuery 3.7** - JavaScript library
+- **jQuery Validation** - Form validation
+- **DataTables** - Advanced tables
+- **Select2** - Advanced select boxes
+- **Bootstrap FileInput** - File upload widget
+- **CKEditor** - Rich text editor
+- **SweetAlert2** - Beautiful alerts
+- **jQuery UI** - UI interactions
+- **AdminLTE 3** - Admin dashboard template
+
+### DevOps & Infrastructure
+- **Docker & Docker Compose** - Containerization
+- **Vite** - Frontend build tool
+- **Git** - Version control
+
+### Third-party APIs
+- **Vimeo API** - Video hosting và streaming
+- **VNPAY** - Payment gateway
+
+---
+
+## 📁 Cấu trúc dự án
+
+```
+Elearning_CMS/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/        # Controllers (Web & API)
+│   │   │   ├── API/           # API Controllers
+│   │   │   └── Auth/          # Authentication Controllers
+│   │   └── Middleware/        # Custom Middleware
+│   ├── Models/                 # Eloquent Models
+│   ├── Services/               # Business Logic Layer
+│   ├── Jobs/                   # Queue Jobs (Vimeo upload)
+│   ├── Notifications/          # Email Notifications
+│   └── Helpers/                # Helper Functions
+├── config/                     # Configuration files
+├── database/
+│   ├── migrations/             # Database migrations
+│   └── seeders/                # Database seeders
+├── routes/
+│   ├── web.php                 # Web routes (CMS)
+│   └── api.php                 # API routes
+├── resources/
+│   └── views/                  # Blade templates
+├── public/                      # Public assets
+├── docker-compose.dev.yml      # Docker Compose (Dev)
+├── docker-compose.yml          # Docker Compose (Production)
+└── Dockerfile                  # Docker image definition
+```
+
+**Kiến trúc:**
+- **MVC Pattern**: Model-View-Controller separation
+- **Service Layer**: Business logic tách biệt khỏi Controllers
+- **Repository Pattern**: (Có thể mở rộng) Abstract database access
+
+---
+
+## 🛠️ Cài đặt và Chạy
+
+### Yêu cầu hệ thống
 - Docker Engine 20.10+
-- Docker Compose 2.0+ (hoặc docker-compose 1.29+)
+- Docker Compose 2.0+
 - Git
+- Node.js 18+ (cho build assets)
 
-## 🐳 Cài đặt và chạy với Docker (Khuyến nghị)
-
-### Bước 1: Clone repository
+### Quick Start với Docker
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/Kamadee/Elearning_CMS
 cd Elearning_CMS
-```
 
-### Bước 2: Tạo file `.env`
-
-Tạo file `.env` từ `.env.example` và cấu hình:
-
-```bash
+# 2. Tạo file .env
 cp .env.example .env
-```
 
-**Cấu hình database trong `.env` (quan trọng):**
-
-```env
+# 3. Cấu hình database trong .env
 DB_CONNECTION=mysql
-DB_HOST=mysql          # Tên service trong docker-compose, KHÔNG dùng 127.0.0.1
-DB_PORT=3306           # Port trong container, KHÔNG dùng 3307
+DB_HOST=mysql
+DB_PORT=3306
 DB_DATABASE=vfl-academy
 DB_USERNAME=root
 DB_PASSWORD=root
-```
 
-### Bước 3: Build và khởi động containers
-
-```bash
-# Build và chạy tất cả containers
+# 4. Build và khởi động containers
 docker compose -f docker-compose.dev.yml up -d --build
-```
 
-**Lưu ý:** Dự án sử dụng `docker-compose.dev.yml` cho môi trường development. File này không chứa các cấu hình SSL của production.
-
-### Bước 4: Cấu hình Laravel
-
-```bash
-# Tạo APP_KEY (nếu chưa có)
+# 5. Cấu hình Laravel
 docker compose -f docker-compose.dev.yml exec app php artisan key:generate
-
-# Chạy migrations
 docker compose -f docker-compose.dev.yml exec app php artisan migrate --force
-
-# Chạy seeders (tạo dữ liệu mẫu)
 docker compose -f docker-compose.dev.yml exec app php artisan db:seed
 
-# Tạo symlink cho storage (nếu cần)
-docker compose -f docker-compose.dev.yml exec app php artisan storage:link
-```
-
-**Lưu ý về Seeders:**
-- Lệnh trên sẽ chạy tất cả seeders được định nghĩa trong `DatabaseSeeder.php`
-- Để chạy seeder cụ thể: `docker compose -f docker-compose.dev.yml exec app php artisan db:seed --class=UserSeeder`
-- Để refresh database và seed lại: `docker compose -f docker-compose.dev.yml exec app php artisan migrate:fresh --seed --force`
-
-### Bước 5: Build Vite Assets (Quan trọng)
-
-Laravel sử dụng Vite để build CSS/JS. Cần build assets trước khi sử dụng:
-
-**Cách 1: Build trên host (Khuyến nghị cho dev)**
-
-```bash
-# Cài đặt Node.js dependencies
+# 6. Build frontend assets
 npm install
-
-# Build assets cho production
 npm run build
 
-# Hoặc chạy dev server (tự động rebuild khi có thay đổi)
-npm run dev
+# 7. Truy cập ứng dụng
+# CMS: http://localhost:8081
+# API: http://localhost:8081/api
 ```
 
-**Cách 2: Build trong Docker container (nếu container có Node.js)**
-
-Nếu Dockerfile đã có Node.js, có thể build trong container:
+### Cài đặt local (không dùng Docker)
 
 ```bash
-docker compose -f docker-compose.dev.yml exec app npm install
-docker compose -f docker-compose.dev.yml exec app npm run build
-```
-
-**Lưu ý:**
-- Sau khi build, file `public/build/manifest.json` sẽ được tạo
-- Nếu không build, sẽ gặp lỗi "Vite manifest not found"
-- Trong môi trường dev, có thể dùng `npm run dev` để tự động rebuild
-
-### Bước 6: Cài đặt dependencies (nếu cần)
-
-Do volume mount, có thể cần cài lại composer trong container:
-
-```bash
-docker compose -f docker-compose.dev.yml exec app composer install
-```
-
-### Bước 7: Kiểm tra containers
-
-```bash
-# Xem trạng thái tất cả containers
-docker compose -f docker-compose.dev.yml ps
-
-# Xem logs
-docker compose -f docker-compose.dev.yml logs -f
-```
-
-## 🌐 Truy cập ứng dụng
-
-### API (cho Frontend)
-- **API Base URL:** `http://localhost:8081/api`
-- **Test endpoint:** `http://localhost:8081/api/ho` (sẽ trả về `8`)
-
-### CMS Admin Panel (cho Admin)
-- **CMS URL:** `http://localhost:8081`
-- **Login page:** `http://localhost:8081/auth/login`
-- **Dashboard:** `http://localhost:8081/home` (sau khi login)
-
-### Database
-- **Host:** `localhost:3307`
-- **User:** `root`
-- **Password:** `root`
-- **Database:** `vfl-academy`
-
-## 📝 Các lệnh Docker hữu ích
-
-### Quản lý containers
-
-```bash
-# Dừng tất cả containers
-docker compose -f docker-compose.dev.yml stop
-
-# Dừng và xóa containers
-docker compose -f docker-compose.dev.yml down
-
-# Dừng và xóa containers + volumes (xóa database)
-docker compose -f docker-compose.dev.yml down -v
-
-# Khởi động lại containers
-docker compose -f docker-compose.dev.yml restart
-
-# Rebuild lại containers
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-### Xem logs
-
-```bash
-# Logs của tất cả services
-docker compose -f docker-compose.dev.yml logs -f
-
-# Logs của service cụ thể
-docker compose -f docker-compose.dev.yml logs -f app
-docker compose -f docker-compose.dev.yml logs -f nginx
-docker compose -f docker-compose.dev.yml logs -f queue
-docker compose -f docker-compose.dev.yml logs -f mysql
-```
-
-### Chạy Artisan commands
-
-```bash
-# Vào container app
-docker compose -f docker-compose.dev.yml exec app bash
-
-# Chạy artisan commands
-docker compose -f docker-compose.dev.yml exec app php artisan migrate
-docker compose -f docker-compose.dev.yml exec app php artisan cache:clear
-docker compose -f docker-compose.dev.yml exec app php artisan config:clear
-
-# Chạy seeders
-docker compose -f docker-compose.dev.yml exec app php artisan db:seed
-docker compose -f docker-compose.dev.yml exec app php artisan db:seed --class=UserSeeder
-docker compose -f docker-compose.dev.yml exec app php artisan migrate:fresh --seed --force
-```
-
-**Lưu ý:** Trong lệnh `docker compose exec app`, `app` là **tên service** (service name) trong docker-compose.yml, không phải tên container. Service name `app` tương ứng với container name `elearning-app`.
-
-### Rebuild service cụ thể
-
-```bash
-# Rebuild chỉ service app
-docker compose -f docker-compose.dev.yml build app
-
-# Rebuild và restart service
-docker compose -f docker-compose.dev.yml up -d --build app
-```
-
-## 🔧 Cấu trúc Docker
-
-### Services
-
-1. **app** - PHP-FPM application container
-   - Port: `8000:8000`
-   - Image: Built from `Dockerfile`
-   - Command: `php-fpm`
-
-2. **nginx** - Nginx web server
-   - Port: `8081:80` (external:internal)
-   - Config: `docker-compose/nginx/nginx.dev.conf`
-   - Serves: `/var/www/public`
-   - **Lưu ý:** Port 8081 được dùng để tránh cần quyền root (port 80 cần sudo)
-
-3. **mysql** - MySQL 8.0 database
-   - Port: `3307:3306` (external:internal)
-   - Database: `vfl-academy`
-   - Volume: `mysql_data` (persistent storage)
-
-4. **queue** - Laravel queue worker
-   - Command: `./start-queue.sh`
-   - Xử lý background jobs (upload video lên Vimeo, etc.)
-
-### Volumes
-
-- `mysql_data` - Persistent storage cho MySQL database
-- `.` (project root) - Mount vào `/var/www` trong containers
-
-## 🔌 Cấu hình Frontend
-
-### Base URL cho API
-
-```javascript
-// Ví dụ với axios
-const api = axios.create({
-  baseURL: 'http://localhost:8081/api',
-  headers: {
-    'Content-Type': 'application/json',
-  }
-});
-```
-
-### CORS Configuration
-
-CORS đã được cấu hình trong `config/cors.php` cho:
-- `http://localhost:5173` (Vite dev server)
-- `https://elearning-landing.netlify.app` (Production)
-
-Nếu frontend chạy ở port khác, thêm vào `config/cors.php`:
-
-```php
-'allowed_origins' => [
-    'http://localhost:5173',
-    'http://localhost:3000',  // Thêm port khác nếu cần
-],
-```
-
-## ⚙️ Cài đặt local (không dùng Docker)
-
-Nếu không muốn dùng Docker, có thể cài đặt trực tiếp:
-
-```bash
-# Clone repo
-git clone https://github.com/Kamadee/Elearning_CMS
-cd Elearning_CMS
-
-# Cài đặt các package PHP
 composer install
-
-# Tạo file .env
 cp .env.example .env
-
-# Tạo APP_KEY
 php artisan key:generate
-
-# Tạo database + chạy migration
 php artisan migrate
-
-# Khởi chạy project
+php artisan db:seed
+npm install && npm run build
 php artisan serve
 ```
 
-## 🐛 Troubleshooting
+**Chi tiết hơn:** Xem [BUILD_PROJECT.md](./BUILD_PROJECT.md)
 
-Nếu gặp lỗi, xem file [BUG_DOC.md](./BUG_DOC.md) để biết các lỗi thường gặp và cách khắc phục.
+---
 
-### Lỗi thường gặp
+## 📡 API Documentation
 
-1. **Permission denied cho `start-queue.sh`**
-   - Đảm bảo file có quyền thực thi: `chmod +x start-queue.sh`
-   - Hoặc rebuild container: `docker compose -f docker-compose.dev.yml build queue`
-
-2. **Database connection failed**
-   - Kiểm tra `DB_HOST=mysql` (không phải `127.0.0.1`)
-   - Kiểm tra `DB_PORT=3306` (không phải `3307`)
-   - Clear config cache: `docker compose -f docker-compose.dev.yml exec app php artisan config:clear`
-
-3. **Container queue bị restart liên tục**
-   - Xem logs: `docker compose -f docker-compose.dev.yml logs queue`
-   - Kiểm tra database connection
-   - Đảm bảo migrations đã chạy
-   - Xem chi tiết trong [BUG_DOC.md](./BUG_DOC.md)
-
-## 🚀 CI/CD và Deployment
-
-### Tại sao cần CI/CD?
-
-**Không có CI/CD (Deployment thủ công):**
-- ❌ Phải SSH vào server mỗi lần deploy
-- ❌ Chạy từng lệnh thủ công: `git pull`, `docker build`, `docker compose up`, etc.
-- ❌ Dễ quên bước, dễ sai sót
-- ❌ Mất thời gian, không tự động
-- ❌ Khó rollback khi có lỗi
-
-**Có CI/CD (Tự động):**
-- ✅ Tự động build và deploy khi push code
-- ✅ Chạy tests trước khi deploy
-- ✅ Deploy nhất quán, không thiếu bước
-- ✅ Tiết kiệm thời gian
-- ✅ Dễ rollback về version trước
-
-### Các công cụ CI/CD phổ biến
-
-1. **GitHub Actions** (Khuyến nghị cho GitHub)
-   - Miễn phí cho public repos
-   - Tích hợp sẵn với GitHub
-   - Dễ setup
-
-2. **GitLab CI/CD**
-   - Tích hợp với GitLab
-   - Runner tự host hoặc dùng GitLab.com
-
-3. **Jenkins**
-   - Self-hosted
-   - Linh hoạt, mạnh mẽ
-   - Phức tạp hơn
-
-4. **CircleCI, Travis CI**
-   - Cloud-based
-   - Dễ sử dụng
-
-### GitHub Actions Workflow (Ví dụ)
-
-Tạo file `.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy to Production
-
-on:
-  push:
-    branches:
-      - main  # Chỉ deploy khi push vào branch main
-  workflow_dispatch:  # Cho phép chạy thủ công
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
-      - name: Deploy to server
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd /path/to/your/project
-            git pull origin main
-            docker compose -f docker-compose.yml down
-            docker compose -f docker-compose.yml build --no-cache
-            docker compose -f docker-compose.yml up -d
-            docker compose -f docker-compose.yml exec app php artisan migrate --force
-            docker compose -f docker-compose.yml exec app php artisan config:clear
-            docker compose -f docker-compose.dev.yml exec app php artisan cache:clear
-          EOF
+### Base URL
+```
+http://localhost:8081/api
 ```
 
-  **Cấu hình SSH Key và Secrets:**
-
-### Bước 1: Tạo SSH Key Pair
-
-Trên máy local hoặc server, tạo SSH key pair:
-
-```bash
-# Tạo SSH key (nếu chưa có)
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions_deploy
-
-# Hoặc dùng RSA (nếu ed25519 không được hỗ trợ)
-ssh-keygen -t rsa -b 4096 -C "github-actions-deploy" -f ~/.ssh/github_actions_deploy
+### Authentication
+API sử dụng JWT authentication. Gửi token trong header:
+```
+Authorization: Bearer {token}
 ```
 
-Sau khi tạo, bạn sẽ có 2 files:
-- `~/.ssh/github_actions_deploy` (private key) - **Giữ bí mật!**
-- `~/.ssh/github_actions_deploy.pub` (public key) - Có thể chia sẻ
+### Endpoints chính
 
-### Bước 2: Thêm Public Key vào Server
+#### Customer Authentication
+- `POST /api/customer/login` - Đăng nhập
+- `POST /api/customer/register` - Đăng ký
+- `POST /api/customer/verify` - Xác thực email
+- `POST /api/customer/logout` - Đăng xuất
 
-Copy public key lên server:
+#### Course Management
+- `GET /api/course/list` - Danh sách khóa học
+- `GET /api/course/detail/{id}` - Chi tiết khóa học
+- `GET /api/course/top` - Khóa học nổi bật
 
-```bash
-# Copy public key lên server
-ssh-copy-id -i ~/.ssh/github_actions_deploy.pub user@your-server.com
+#### Cart Management
+- `GET /api/cart/content` - Nội dung giỏ hàng
+- `POST /api/cart/add` - Thêm vào giỏ hàng
+- `DELETE /api/cart/delete/{id}` - Xóa khỏi giỏ hàng
 
-# Hoặc thủ công:
-cat ~/.ssh/github_actions_deploy.pub
-# Copy output và thêm vào server: ~/.ssh/authorized_keys
+#### Payment
+- `POST /api/payment/create` - Tạo payment URL
+- `GET /api/payment/result` - Kết quả thanh toán
+
+**Chi tiết API:** Xem [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md)
+
+---
+
+## 🏗️ Kiến trúc
+
+### Request Flow
+```
+Route → Middleware → Controller → Service → Model → Database
 ```
 
-### Bước 3: Thêm Secrets vào GitHub
+### Design Patterns
+- **MVC Pattern**: Separation of concerns
+- **Service Layer Pattern**: Business logic abstraction
+- **Repository Pattern**: (Có thể mở rộng) Data access abstraction
+- **Factory Pattern**: Model factories cho testing
 
-1. Vào repository trên GitHub → **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret**
-3. Thêm các secrets sau:
+### Database Design
+- **Eloquent ORM**: Object-relational mapping
+- **Relationships**: One-to-Many, Many-to-Many với pivot tables
+- **Migrations**: Version control cho database schema
+- **Seeders**: Dữ liệu mẫu cho development
 
-   - **`SSH_PRIVATE_KEY`**: 
-     ```bash
-     # Copy nội dung private key
-     cat ~/.ssh/github_actions_deploy
-     # Copy toàn bộ output (bao gồm cả -----BEGIN và -----END)
-     ```
-     Paste vào GitHub Secret
+### Security
+- ✅ CSRF Protection
+- ✅ SQL Injection Prevention (Eloquent ORM)
+- ✅ XSS Prevention (Blade auto-escaping)
+- ✅ JWT Authentication
+- ✅ Role-based Access Control
+- ✅ Input Validation
 
-   - **`SSH_USER`**: Username để SSH vào server (ví dụ: `ubuntu`, `root`)
-   
-   - **`SSH_HOST`**: IP hoặc domain của server (ví dụ: `123.45.67.89` hoặc `yourdomain.com`)
-   
-   - **`PROJECT_PATH`**: (Tùy chọn) Đường dẫn project trên server. Mặc định: `/home/ubuntu/elearning`
-   
-   - **`DB_PASSWORD`**: (Tùy chọn) Password MySQL để backup database trước khi deploy
+### Performance Optimization
+- ✅ Eager Loading (N+1 problem solution)
+- ✅ Database Indexing
+- ✅ Caching (Config, Routes, Views)
+- ✅ Queue Jobs cho heavy tasks
+- ✅ Server-side DataTables processing
 
-**Lưu ý quan trọng:**
-- ⚠️ **KHÔNG BAO GIỜ** commit private key vào Git
-- ⚠️ Private key phải được giữ bí mật
-- ✅ Chỉ thêm vào GitHub Secrets (được mã hóa)
-- ✅ Public key có thể public (không sao)
+---
 
-### Workflow chi tiết hơn (với tests)
+## 🔮 Dự định cải tiến
 
-Xem file `.github/workflows/deploy.yml` trong project để có workflow đầy đủ với:
-- Chạy tests trước khi deploy
-- Build Docker image
-- Push image lên registry (nếu cần)
-- Deploy lên server
-- Health check sau deploy
-- Rollback tự động nếu fail
+### Short-term (1-2 tháng)
+- [ ] Unit tests và Integration tests
+- [ ] API documentation với Swagger/OpenAPI
+- [ ] Real-time notifications với WebSockets
+- [ ] Advanced search với Elasticsearch
+- [ ] Image optimization và CDN integration
 
-### Deployment trên Server Production
+### Medium-term (3-6 tháng)
+- [ ] Microservices architecture (tách services)
+- [ ] Redis caching layer
+- [ ] Message queue với RabbitMQ
+- [ ] GraphQL API (bên cạnh REST)
+- [ ] Mobile app API optimization
 
-**Cấu trúc thư mục trên server:**
-```
-/home/ubuntu/elearning/
-├── docker-compose.yml          # Production config
-├── .env                        # Production environment variables
-├── docker-compose/nginx/
-│   └── nginx.conf             # Production nginx config
-└── ...
-```
+### Long-term (6+ tháng)
+- [ ] Kubernetes deployment
+- [ ] CI/CD pipeline hoàn chỉnh
+- [ ] Monitoring và logging (ELK Stack)
+- [ ] Auto-scaling
+- [ ] Multi-tenant support
 
-**Lệnh deploy thủ công (nếu không dùng CI/CD):**
-```bash
-# SSH vào server
-ssh user@your-server.com
-
-# Vào thư mục project
-cd /home/ubuntu/elearning
-
-# Pull code mới
-git pull origin main
-
-# Rebuild và restart containers
-docker compose -f docker-compose.yml down
-docker compose -f docker-compose.yml build --no-cache
-docker compose -f docker-compose.yml up -d
-
-# Chạy migrations
-docker compose -f docker-compose.yml exec app php artisan migrate --force
-
-# Clear cache
-docker compose -f docker-compose.yml exec app php artisan config:clear
-docker compose -f docker-compose.yml exec app php artisan cache:clear
-docker compose -f docker-compose.yml exec app php artisan route:clear
-docker compose -f docker-compose.yml exec app php artisan view:clear
-```
-
-### Khác biệt giữa Dev và Production
-
-| Aspect | Development | Production |
-|--------|-------------|------------|
-| **File compose** | `docker-compose.dev.yml` | `docker-compose.yml` |
-| **Nginx config** | `nginx.dev.conf` | `nginx.conf` |
-| **Port** | `8081:80` | `80:80`, `443:443` |
-| **SSL** | Không có | Có (Let's Encrypt) |
-| **Debug** | `APP_DEBUG=true` | `APP_DEBUG=false` |
-| **Environment** | `APP_ENV=local` | `APP_ENV=production` |
-| **Volume mount** | Code mount trực tiếp | Code trong image |
-
-### Best Practices cho CI/CD
-
-1. **Chỉ deploy từ branch `main` hoặc `production`**
-2. **Chạy tests trước khi deploy**
-3. **Build Docker image với tag version (git commit hash)**
-4. **Health check sau deploy**
-5. **Rollback strategy nếu deploy fail**
-6. **Notify team khi deploy thành công/thất bại**
-7. **Backup database trước khi chạy migrations**
-
-### Tài liệu tham khảo CI/CD
-
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [GitLab CI/CD Documentation](https://docs.gitlab.com/ee/ci/)
-- [Docker Compose Production](https://docs.docker.com/compose/production/)
+---
 
 ## 📚 Tài liệu tham khảo
 
+### Project Documentation
+- [BUILD_PROJECT.md](./BUILD_PROJECT.md) - Hướng dẫn build và deploy chi tiết
+- [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md) - Kiến thức và kinh nghiệm dự án
+- [BUG_DOC.md](./BUG_DOC.md) - Troubleshooting và bug fixes
+- [CACHE_CLEAR_GUIDE.md](./CACHE_CLEAR_GUIDE.md) - Cache management
+
+### External Resources
 - [Laravel Documentation](https://laravel.com/docs)
+- [Eloquent Relationships](https://laravel.com/docs/eloquent-relationships)
+- [JWT Auth Documentation](https://jwt-auth.readthedocs.io/)
 - [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
+
+---
+

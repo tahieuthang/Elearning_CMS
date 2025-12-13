@@ -15,14 +15,6 @@ use App\Http\Middleware\JWTVerifyCustomer;
 Route::get('/ho', function () {
   return 8;
 });
-// Route::middleware('auth.jwt')->group(function () {
-//   Route::get('/user', function () {
-//     return Auth::guard('api')->user();
-//   });
-// });
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//   return $request->user();
-// });
 
 Route::post('/customer/login', [CustomerController::class, 'postLogin']); //ok
 Route::post('/customer/register', [CustomerController::class, 'postRegister']); //ok

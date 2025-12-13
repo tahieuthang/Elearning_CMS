@@ -34,9 +34,28 @@ class Course extends Model
   {
     return $this->hasMany(OrderItem::class);
   }
+  public function reviews()
+  {
+    return $this->hasMany(Review::class);
+  }
   public static function getCourseRelationShipById($id)
   {
     $course = Course::with('courseCategories', 'courseTags', 'videos')->find($id);
     return $course;
+  }
+  
+  /**
+   * Update rating average and count for this course
+   */
+  public function updateRating()
+  {
+    $ratingStats = $this->reviews()
+      ->selectRaw('AVG(rate) as average, COUNT(*) as count')
+      ->first();
+    
+    $this->update([
+      'rating_average' => round($ratingStats->average ?? 0, 2),
+      'rating_count' => $ratingStats->count ?? 0
+    ]);
   }
 }

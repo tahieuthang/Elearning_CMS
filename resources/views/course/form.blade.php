@@ -81,13 +81,29 @@
 
             <div class="form-group">
               <label for="room-name">{{ __('course.original_price') }}</label>
-              <input value="{{old('originalPrice', $course ? \App\Helpers\Helper::convertMoney($course->original_price) : '')}}" id="originalPrice" name="originalPrice" type="text" class="form-control" onkeyup="onlyNumberAmount(event)">
+              <input
+                value="{{ old('originalPrice', $course ? \App\Helpers\Helper::convertMoney($course->original_price, '') : '') }}"
+                id="originalPrice"
+                name="originalPrice"
+                type="text"
+                class="form-control js-money-input"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="0">
 
             </div>
 
             <div class="form-group">
               <label for="room-name">{{ __('course.sale_off_price') }}</label>
-              <input value="{{old('saleOffPrice', $course ? \App\Helpers\Helper::convertMoney($course->sale_off_price) : '')}}" id="saleOffPrice" name="saleOffPrice" type="text" class="form-control" onkeyup="onlyNumberAmount(event)">
+              <input
+                value="{{ old('saleOffPrice', $course ? \App\Helpers\Helper::convertMoney($course->sale_off_price, '') : '') }}"
+                id="saleOffPrice"
+                name="saleOffPrice"
+                type="text"
+                class="form-control js-money-input"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="0">
 
             </div>
 

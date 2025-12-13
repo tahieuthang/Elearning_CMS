@@ -16,6 +16,7 @@ use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Yajra\Datatables\Datatables;
 use Carbon\Carbon;
@@ -484,7 +485,10 @@ class CourseServices
 
   public function getCoursesList($filterData)
   {
-      $results = Course::select(
+      // Check if rating columns exist (migration may not have run yet)
+      $hasRatingColumns = Schema::hasColumn('courses', 'rating_average') && Schema::hasColumn('courses', 'rating_count');
+      
+      $selectColumns = [
         "id",
         "title",
         "description",
@@ -496,7 +500,15 @@ class CourseServices
         "content",
         "original_price",
         "sale_off_price",
-      )->with([
+      ];
+      
+      // Add rating columns only if they exist
+      if ($hasRatingColumns) {
+        $selectColumns[] = "rating_average";
+        $selectColumns[] = "rating_count";
+      }
+      
+      $results = Course::select($selectColumns)->with([
         'courseCategories:id,category_name',
         'courseTags:id,tag_name',
         'videos'
@@ -709,12 +721,20 @@ class CourseServices
       ->where('status', config('constants.course_status_by_text.active'));;
     })->exists();
     if($isBought) {
-      return Review::create([
+      $review = Review::create([
         'course_id' => $data['course_id'],
         'customer_id' => $userId,
         'comment' => $data['comment'],
         'rate' => $data['rate']
       ]);
+      
+      // Update course rating
+      $course = Course::find($data['course_id']);
+      if ($course) {
+        $course->updateRating();
+      }
+      
+      return $review;
     }
   }
   

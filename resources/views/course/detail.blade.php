@@ -105,6 +105,39 @@
   const original = form.serialize()
   let isClickedSubmit = false
 
+  // Money inputs: format like ecommerce CMS (thousand separators, no currency symbol in input)
+  // - live format while typing
+  // - sanitize to digits only before submit (backend can parse reliably)
+  function sanitizeMoneyToDigits(value) {
+    if (value === null || value === undefined) return '';
+    const digits = String(value).replace(/[^\d]/g, '');
+    return digits.replace(/^0+(?=\d)/, '');
+  }
+
+  function bindMoneyInputs() {
+    const $moneyInputs = $('.js-money-input');
+    if ($moneyInputs.length === 0) return;
+
+    // normalize existing values on load
+    $moneyInputs.each(function() {
+      if (typeof window.formatMoneyInputElement === 'function') {
+        window.formatMoneyInputElement(this);
+      } else if (typeof window.onlyNumberAmount === 'function') {
+        window.onlyNumberAmount(this);
+      }
+    });
+
+    $moneyInputs.on('input', function() {
+      if (typeof window.formatMoneyInputElement === 'function') {
+        window.formatMoneyInputElement(this);
+      } else if (typeof window.onlyNumberAmount === 'function') {
+        window.onlyNumberAmount(this);
+      }
+    });
+  }
+
+  bindMoneyInputs();
+
   //   handle upload room image
   const maxCapacity = {{ \Config::get('constants.max_capacity_image_upload') }}
   const course = @json($course);
@@ -213,6 +246,12 @@
     },
     submitHandler: function(form) {
       // Form is valid, so you can submit it
+      // submit clean numeric values (strip separators)
+      const $originalPrice = $('#originalPrice');
+      const $saleOffPrice = $('#saleOffPrice');
+      if ($originalPrice.length) $originalPrice.val(sanitizeMoneyToDigits($originalPrice.val()));
+      if ($saleOffPrice.length) $saleOffPrice.val(sanitizeMoneyToDigits($saleOffPrice.val()));
+
       let videoList = []
       $('.row-episode').each(function(i, obj) {
         const epTitle = $(obj).find('.ep-title').val();
