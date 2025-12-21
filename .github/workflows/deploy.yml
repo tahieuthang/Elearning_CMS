@@ -77,6 +77,10 @@ jobs:
             echo "▶️ Starting containers..."
             docker compose -f docker-compose.yml up -d
 
+            echo "📦 Installing composer dependencies..."
+            docker compose -f docker-compose.yml exec -T app composer install \
+            --no-dev --optimize-autoloader --no-interaction
+
             echo "⏳ Waiting for services to be ready..."
             sleep 10
 
