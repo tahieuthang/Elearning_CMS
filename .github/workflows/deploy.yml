@@ -61,7 +61,7 @@ jobs:
 
             echo "📥 Pulling latest code..."
             git fetch origin
-            git reset --hard origin/main
+            git reset --hard origin/dev
 
             echo "💾 Creating database backup..."
             docker compose -f docker-compose.yml exec -T mysql \
