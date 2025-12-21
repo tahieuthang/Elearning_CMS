@@ -3,9 +3,8 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main  # Chỉ deploy khi push vào branch main
-      - production  # Hoặc branch production
-  workflow_dispatch:  # Cho phép chạy thủ công từ GitHub UI
+      - dev
+  workflow_dispatch:
 
 jobs:
   test:
@@ -57,7 +56,7 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/home/ubuntu/elearning' }}  # Có thể hardcode trực tiếp nếu cố định
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/var/www/elearning' }}  # Có thể hardcode trực tiếp nếu cố định
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} bash << EOF
@@ -68,11 +67,11 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             echo "💾 Creating database backup..."
-            docker compose -f docker-compose.yml exec -T mysql mysqldump -u root -p\${DB_PASSWORD} vfl-academy > backup_\$(date +%Y%m%d_%H%M%S).sql || true
+            docker compose -f docker-compose.yml exec -T mysql \ sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vfl-academy' \ > backup_$(date +%Y%m%d_%H%M%S).sql || true
             echo "🛑 Stopping containers..."
             docker compose -f docker-compose.yml down
             echo "🔨 Building Docker images..."
-            docker compose -f docker-compose.yml build --no-cache
+            docker compose -f docker-compose.yml build
             echo "▶️ Starting containers..."
             docker compose -f docker-compose.yml up -d
             echo "⏳ Waiting for services to be ready..."
