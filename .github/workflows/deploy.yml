@@ -24,18 +24,13 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
       
-      - name: Copy .env
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-      
       - name: Run tests
         run: php artisan test
-        continue-on-error: true  # Không fail workflow nếu tests fail (tùy chọn)
+        continue-on-error: true
 
   deploy:
     name: Deploy to Server
-    needs: test  # Chỉ deploy sau khi tests pass
+    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
     
@@ -57,39 +52,52 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/var/www/elearning' }}  # Có thể hardcode trực tiếp nếu cố định
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          
         run: |
           ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} bash << EOF
             set -e
             echo "🚀 Starting deployment..."
             cd ${PROJECT_PATH}
+
             echo "📥 Pulling latest code..."
             git fetch origin
             git reset --hard origin/main
+
             echo "💾 Creating database backup..."
-            docker compose -f docker-compose.yml exec -T mysql \ sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vfl-academy' \ > backup_$(date +%Y%m%d_%H%M%S).sql || true
+            docker compose -f docker-compose.yml exec -T mysql \
+            sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vfl-academy' \
+            > backup_$(date +%Y%m%d_%H%M%S).sql || true
+
             echo "🛑 Stopping containers..."
             docker compose -f docker-compose.yml down
+
             echo "🔨 Building Docker images..."
             docker compose -f docker-compose.yml build
+
             echo "▶️ Starting containers..."
             docker compose -f docker-compose.yml up -d
+
             echo "⏳ Waiting for services to be ready..."
             sleep 10
+
             echo "📊 Running migrations..."
             docker compose -f docker-compose.yml exec -T app php artisan migrate --force
+
             echo "🧹 Clearing caches..."
             docker compose -f docker-compose.yml exec -T app php artisan config:clear
             docker compose -f docker-compose.yml exec -T app php artisan cache:clear
             docker compose -f docker-compose.yml exec -T app php artisan route:clear
             docker compose -f docker-compose.yml exec -T app php artisan view:clear
+
             echo "⚡ Optimizing application..."
             docker compose -f docker-compose.yml exec -T app php artisan config:cache
             docker compose -f docker-compose.yml exec -T app php artisan route:cache
             docker compose -f docker-compose.yml exec -T app php artisan view:cache
+
             echo "🏥 Running health check..."
             sleep 5
             curl -f http://localhost/api/ho || exit 1
+            
             echo "✅ Deployment completed successfully!"
           EOF
       
