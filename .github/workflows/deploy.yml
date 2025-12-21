@@ -64,35 +64,35 @@ jobs:
             git reset --hard origin/dev
 
             echo "💾 Creating database backup..."
-            docker-compose -f docker-compose.yml exec -T mysql \
+            docker compose -f docker-compose.yml exec -T mysql \
             sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vfl-academy' \
             > backup_$(date +%Y%m%d_%H%M%S).sql || true
 
             echo "🛑 Stopping containers..."
-            docker-compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml down
 
             echo "🔨 Building Docker images..."
-            docker-compose -f docker-compose.yml build
+            docker compose -f docker-compose.yml build
 
             echo "▶️ Starting containers..."
-            docker-compose -f docker-compose.yml up -d
+            docker compose -f docker-compose.yml up -d
 
             echo "⏳ Waiting for services to be ready..."
             sleep 10
 
             echo "📊 Running migrations..."
-            docker-compose -f docker-compose.yml exec -T app php artisan migrate --force
+            docker compose -f docker-compose.yml exec -T app php artisan migrate --force
 
             echo "🧹 Clearing caches..."
-            docker-compose -f docker-compose.yml exec -T app php artisan config:clear
-            docker-compose -f docker-compose.yml exec -T app php artisan cache:clear
-            docker-compose -f docker-compose.yml exec -T app php artisan route:clear
-            docker-compose -f docker-compose.yml exec -T app php artisan view:clear
+            docker compose -f docker-compose.yml exec -T app php artisan config:clear
+            docker compose -f docker-compose.yml exec -T app php artisan cache:clear
+            docker compose -f docker-compose.yml exec -T app php artisan route:clear
+            docker compose -f docker-compose.yml exec -T app php artisan view:clear
 
             echo "⚡ Optimizing application..."
-            docker-compose -f docker-compose.yml exec -T app php artisan config:cache
-            docker-compose -f docker-compose.yml exec -T app php artisan route:cache
-            docker-compose -f docker-compose.yml exec -T app php artisan view:cache
+            docker compose -f docker-compose.yml exec -T app php artisan config:cache
+            docker compose -f docker-compose.yml exec -T app php artisan route:cache
+            docker compose -f docker-compose.yml exec -T app php artisan view:cache
 
             echo "🏥 Running health check..."
             sleep 5
