@@ -32,7 +32,7 @@ jobs:
     name: Deploy to Server
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    if: github.ref == 'refs/heads/dev'
     
     steps:
       - name: Checkout code
@@ -97,7 +97,7 @@ jobs:
             echo "🏥 Running health check..."
             sleep 5
             curl -f http://localhost/api/ho || exit 1
-            
+
             echo "✅ Deployment completed successfully!"
           EOF
       
