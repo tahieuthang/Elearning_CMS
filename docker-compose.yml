@@ -9,8 +9,6 @@ services:
     container_name: elearning-app
     restart: unless-stopped
     working_dir: /var/www
-    volumes:
-      - .:/var/www
     ports:
       - "8000:8000"
     depends_on:
@@ -50,8 +48,6 @@ services:
     container_name: elearning-queue
     command: ./start-queue.sh
     restart: unless-stopped
-    volumes:
-      - .:/var/www
     depends_on:
       - app
       - mysql
