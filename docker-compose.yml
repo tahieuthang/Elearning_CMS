@@ -46,7 +46,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: elearning-queue
-    command: ./start-queue.sh
+    command: php artisan queue:work --sleep=3 --tries=3
     restart: unless-stopped
     depends_on:
       - app
