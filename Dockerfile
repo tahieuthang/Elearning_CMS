@@ -1,27 +1,25 @@
-# ===== Stage 1: build vendor =====
-FROM composer:2 AS vendor
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# ===== Stage 2: php runtime =====
 FROM php:8.2-fpm
 
+# system deps
 RUN apt-get update && apt-get install -y \
+    git unzip zip curl \
     libpng-dev libjpeg-dev libonig-dev libxml2-dev \
-    zip unzip curl git \
     && docker-php-ext-install pdo_mysql mbstring bcmath gd
+
+# composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy source
+# copy source
 COPY . .
 
-# Copy vendor từ stage 1
-COPY --from=vendor /app/vendor /var/www/vendor
+# 🚨 CỰC KỲ QUAN TRỌNG
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
 
-RUN chmod -R 775 storage bootstrap/cache \
- && chmod +x start-queue.sh
-
-CMD ["php-fpm"]
+RUN chmod -R 775 storage bootstrap/cache
