@@ -52,6 +52,8 @@ services:
     depends_on:
       - app
       - mysql
+    volumes:
+      - app_code:/var/www
 volumes:
   mysql_data:
   app_code:
