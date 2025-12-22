@@ -72,7 +72,7 @@ jobs:
             docker compose -f docker-compose.yml down
 
             echo "🔨 Building Docker images..."
-            docker compose -f docker-compose.yml build
+            docker compose -f docker-compose.yml build --no-cache
 
             echo "▶️ Starting containers..."
             docker compose -f docker-compose.yml up -d
