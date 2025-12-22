@@ -46,7 +46,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: elearning-queue
-    command: php artisan queue:work --sleep=3 --tries=3
+    command: bash -c "composer install --no-dev --no-interaction && php artisan queue:work --sleep=3 --tries=3"
     restart: unless-stopped
     depends_on:
       - app
