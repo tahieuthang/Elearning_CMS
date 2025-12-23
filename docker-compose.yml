@@ -9,6 +9,9 @@ services:
     container_name: elearning-app
     restart: unless-stopped
     working_dir: /var/www
+    # Bind host public folder into the app container so PHP writes are visible to nginx
+    volumes:
+      - ./public:/var/www/public
     ports:
       - "8000:8000"
     depends_on:
