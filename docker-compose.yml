@@ -11,8 +11,6 @@ services:
     working_dir: /var/www
     ports:
       - "8000:8000"
-    volumes:
-    - app_code:/var/www
     depends_on:
       - mysql
     command: php-fpm -y /usr/local/etc/php-fpm.conf -R
@@ -52,8 +50,6 @@ services:
     depends_on:
       - app
       - mysql
-    volumes:
-      - app_code:/var/www
 volumes:
   mysql_data:
   app_code:

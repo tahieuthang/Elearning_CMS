@@ -10,8 +10,7 @@ WORKDIR /var/www
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache public/uploads \
+ && chmod -R 775 storage bootstrap/cache public/uploads
 
 USER www-data
