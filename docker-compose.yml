@@ -26,6 +26,10 @@ services:
       - ./docker-compose/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/elearning/ssl/certbot:/var/www/certbot
+      # Mount the application public folder so nginx can serve static files
+      - ./public:/var/www/public:ro
+      # Ensure uploads are explicitly available (optional but helpful)
+      - ./public/uploads:/var/www/public/uploads:ro
     depends_on:
       - app
 
