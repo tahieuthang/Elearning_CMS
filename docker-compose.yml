@@ -51,7 +51,7 @@ services:
   queue:
     image: elearning
     container_name: elearning-queue
-    command: php artisan queue:work --sleep=3 --tries=3
+    command: ./start-queue.sh
     restart: unless-stopped
     depends_on:
       - app
