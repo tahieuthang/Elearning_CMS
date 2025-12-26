@@ -111,9 +111,9 @@ class VideoServices
   public function processUploadChunkVideo(Request $data)
   {
     $preview = $config = $errors = [];
-    $targetDir = public_path('uploads');
-    if (!file_exists($targetDir)) {
-      @mkdir($targetDir);
+    $targetDir = storage_path('app/uploads/videos/chunks');;
+    if (!is_dir($targetDir)) {
+      mkdir($targetDir, 0775, true);
     }
 
     $fileBlob = 'fileBlob';
@@ -200,7 +200,13 @@ class VideoServices
         'name' => $video_name,
         'description' => 'test video'
       ];
-      UploadToVimeo::dispatch(public_path($filePath), $videoId, $videoUploadingRecordId, $options);
+      $filePath = 'uploads/videos/final/' . basename($filePath);
+      UploadToVimeo::dispatch(
+        storage_path('app/' . $filePath),
+        $videoId,
+        $videoUploadingRecordId,
+        $options
+      );
       return [
         'status' => true,
       ];
