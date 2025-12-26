@@ -86,7 +86,11 @@ class CourseController extends Controller
 
   public function addReviews($id, Request $request)
   {
+    // Log incoming request for debugging
+    Log::info('API addReviews called', ['course_id' => $id, 'payload' => $request->all()]);
+
     if (!auth('customer')->check()) {
+      Log::error('addReviews unauthorized attempt', ['course_id' => $id, 'payload' => $request->all()]);
       return response()->json([
         'status' => 401,
         'message' => 'Unauthorized'
@@ -100,11 +104,15 @@ class CourseController extends Controller
         "rate" => 'required'
       ]);
 
+      Log::info('addReviews validated payload', ['comment' => $request->comment, 'rate' => $request->rate]);
+
       $review = $this->courseServices->addReviews([
         'course_id' => $id,
         'comment' => $request->comment,
         'rate' => $request->rate
       ]);
+
+      Log::info('addReviews service returned', ['result' => $review ? 'created' : 'false']);
 
       if (!$review) {
         DB::rollBack();

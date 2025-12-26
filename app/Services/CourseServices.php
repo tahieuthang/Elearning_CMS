@@ -711,12 +711,17 @@ class CourseServices
 
   public function addReviews($data)
   {
+    Log::info('CourseServices::addReviews called', ['data' => $data]);
+
     $user = auth('customer')->user();
     if (!$user) {
+      Log::error('CourseServices::addReviews - unauthenticated user');
       return false;
     }
 
     $userId = $user->id;
+    Log::info('CourseServices::addReviews - auth user', ['user_id' => $userId]);
+
     $isBought = Order::where([
       ['customer_id', $userId],
       ['status', config('constants.order_status.completed')],
@@ -726,22 +731,34 @@ class CourseServices
       ->where('status', config('constants.course_status_by_text.active'));
     })->exists();
 
+    Log::info('CourseServices::addReviews - isBought', ['user_id' => $userId, 'course_id' => $data['course_id'], 'isBought' => $isBought]);
+
     if (!$isBought) {
       return false;
     }
 
-    $review = Review::create([
-      'course_id' => $data['course_id'],
-      'customer_id' => $userId,
-      'comment' => $data['comment'],
-      'rate' => $data['rate']
-    ]);
+    try {
+      $review = Review::create([
+        'course_id' => $data['course_id'],
+        'customer_id' => $userId,
+        'comment' => $data['comment'],
+        'rate' => $data['rate']
+      ]);
+    } catch (\Exception $e) {
+      Log::error('CourseServices::addReviews - create failed', ['exception' => $e->getMessage(), 'data' => $data]);
+      return false;
+    }
 
     $course = Course::find($data['course_id']);
     if ($course && method_exists($course, 'updateRating')) {
-      $course->updateRating();
+      try {
+        $course->updateRating();
+      } catch (\Exception $e) {
+        Log::error('CourseServices::addReviews - updateRating failed', ['exception' => $e->getMessage(), 'course_id' => $data['course_id']]);
+      }
     }
 
+    Log::info('CourseServices::addReviews - success', ['review_id' => $review->id ?? null]);
     return $review;
   }
   
