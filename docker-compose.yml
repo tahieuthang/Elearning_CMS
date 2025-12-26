@@ -12,8 +12,6 @@ services:
     # Bind host public folder into the app container so PHP writes are visible to nginx
     volumes:
       - ./public:/var/www/public
-      # Mount storage so uploads live in storage (storage/app/public) and are shared with nginx/queue
-      - ./storage:/var/www/storage
     ports:
       - "8000:8000"
     depends_on:
@@ -33,7 +31,8 @@ services:
       - /var/www/elearning/ssl/certbot:/var/www/certbot
       # Mount the application public folder so nginx can serve static files
       - ./public:/var/www/public:ro
-      - ./storage/app/public:/var/www/public/uploads:ro
+      # Ensure uploads are explicitly available (optional but helpful)
+      - ./public/uploads:/var/www/public/uploads
     depends_on:
       - app
 
@@ -58,8 +57,6 @@ services:
     # Mount public so queue worker can access uploaded files created by the app container
     volumes:
       - ./public:/var/www/public
-      # Mount storage so queue can read files in storage/app/public
-      - ./storage:/var/www/storage
     depends_on:
       - app
       - mysql
