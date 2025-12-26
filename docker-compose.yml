@@ -53,6 +53,10 @@ services:
     container_name: elearning-queue
     command: ./start-queue.sh
     restart: unless-stopped
+    working_dir: /var/www
+    # Mount public so queue worker can access uploaded files created by the app container
+    volumes:
+      - ./public:/var/www/public
     depends_on:
       - app
       - mysql
