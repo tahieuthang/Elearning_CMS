@@ -86,17 +86,34 @@ class CourseController extends Controller
 
   public function addReviews($id, Request $request)
   {
+    if (!auth('customer')->check()) {
+      return response()->json([
+        'status' => 401,
+        'message' => 'Unauthorized'
+      ], 401);
+    }
+
     DB::beginTransaction();
     try {
       $request->validate([
         "comment" => 'required',
         "rate" => 'required'
       ]);
-      $this->courseServices->addReviews([
+
+      $review = $this->courseServices->addReviews([
         'course_id' => $id,
         'comment' => $request->comment,
         'rate' => $request->rate
       ]);
+
+      if (!$review) {
+        DB::rollBack();
+        return response()->json([
+          'status' => 403,
+          'message' => 'Bạn phải mua khóa học mới được đánh giá'
+        ], 403);
+      }
+
       DB::commit();
       return $this->createdSuccessResponse();
     } catch (ValidationException $e) {
@@ -109,6 +126,7 @@ class CourseController extends Controller
       ], 422); 
     } catch (\Exception $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
       return $this->internalServerErrorResponse();
     } 
   }

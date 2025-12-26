@@ -711,31 +711,38 @@ class CourseServices
 
   public function addReviews($data)
   {
-    $userId = auth('customer')->user()->id;
+    $user = auth('customer')->user();
+    if (!$user) {
+      return false;
+    }
+
+    $userId = $user->id;
     $isBought = Order::where([
       ['customer_id', $userId],
-      ['status', config('constants.order_status.completed')]
+      ['status', config('constants.order_status.completed')],
     ])
     ->whereHas('courses', function ($q) use ($data) {
       $q->where('courses.id', $data['course_id'])
-      ->where('status', config('constants.course_status_by_text.active'));;
+      ->where('status', config('constants.course_status_by_text.active'));
     })->exists();
-    if($isBought) {
-      $review = Review::create([
-        'course_id' => $data['course_id'],
-        'customer_id' => $userId,
-        'comment' => $data['comment'],
-        'rate' => $data['rate']
-      ]);
-      
-      // Update course rating
-      $course = Course::find($data['course_id']);
-      if ($course) {
-        $course->updateRating();
-      }
-      
-      return $review;
+
+    if (!$isBought) {
+      return false;
     }
+
+    $review = Review::create([
+      'course_id' => $data['course_id'],
+      'customer_id' => $userId,
+      'comment' => $data['comment'],
+      'rate' => $data['rate']
+    ]);
+
+    $course = Course::find($data['course_id']);
+    if ($course && method_exists($course, 'updateRating')) {
+      $course->updateRating();
+    }
+
+    return $review;
   }
   
   public function getCategoryBestOfUser() {
