@@ -13,7 +13,7 @@ services:
     volumes:
       - ./public:/var/www/public
       # Mount storage so uploads live in storage (storage/app/public) and are shared with nginx/queue
-      - ./storage/uploads:/var/www/storage/uploads
+      - ./storage:/var/www/storage
     ports:
       - "8000:8000"
     depends_on:
@@ -33,7 +33,7 @@ services:
       - /var/www/elearning/ssl/certbot:/var/www/certbot
       # Mount the application public folder so nginx can serve static files
       - ./public:/var/www/public:ro
-      - ./storage/uploads:/var/www/public/uploads:ro
+      - ./storage/app/public:/var/www/public/uploads:ro
     depends_on:
       - app
 
@@ -59,7 +59,7 @@ services:
     volumes:
       - ./public:/var/www/public
       # Mount storage so queue can read files in storage/app/public
-      - ./storage/uploads:/var/www/storage/uploads
+      - ./storage:/var/www/storage
     depends_on:
       - app
       - mysql
