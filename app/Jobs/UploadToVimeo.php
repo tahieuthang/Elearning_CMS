@@ -46,10 +46,23 @@ class UploadToVimeo implements ShouldQueue
     DB::beginTransaction();
     try {
       VideoUploading::where('id', $this->videoUploadingRecordId)->update(['job_id' => $this->job->getJobId()]);
+
+      // Ensure the file exists before attempting upload
+      if (!file_exists($this->file)) {
+        Log::error('UploadToVimeo: file not found before upload', ['file' => $this->file, 'video_uploading_id' => $this->videoUploadingRecordId]);
+        VideoUploading::where('id', $this->videoUploadingRecordId)
+          ->update([
+            'vimeo_id' => null,
+            'job_status' => config('constants.job_status.fail'),
+            'error_log' => 'file not found: ' . $this->file
+          ]);
+        DB::commit();
+        return;
+      }
+
       $vimeoVideoId = Vimeo::upload($this->file, $this->options);
-      var_dump($vimeoVideoId);
+      Log::info('UploadToVimeo: uploaded to Vimeo', ['vimeoVideoId' => $vimeoVideoId, 'file' => $this->file]);
       $vimeoCode = basename($vimeoVideoId);
-      var_dump($vimeoCode);
       VideoUploading::where('id', $this->videoUploadingRecordId)
         ->update([
           'vimeo_id' => $vimeoCode,
@@ -60,7 +73,7 @@ class UploadToVimeo implements ShouldQueue
       DB::commit();
       // unlink($this->file);
     } catch (\Exception $e) {
-      var_dump(333, $e);
+      Log::error('UploadToVimeo failed', ['exception' => (string) $e, 'file' => $this->file, 'video_uploading_id' => $this->videoUploadingRecordId]);
       DB::rollBack();
       DB::beginTransaction();
       VideoUploading::where('id', $this->videoUploadingRecordId)
