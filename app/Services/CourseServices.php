@@ -721,15 +721,20 @@ class CourseServices
 
     $userId = $user->id;
     Log::info('CourseServices::addReviews - auth user', ['user_id' => $userId]);
-
-    $isBought = Order::where([
-      ['customer_id', $userId],
-      ['status', config('constants.order_status.completed')],
-    ])
-    ->whereHas('courses', function ($q) use ($data) {
-      $q->where('courses.id', $data['course_id'])
-      ->where('status', config('constants.course_status_by_text.active'));
-    })->exists();
+    try {
+      $isBought = Order::where([
+        ['customer_id', $userId],
+        ['status', config('constants.order_status.completed')],
+      ])
+      ->whereHas('courses', function ($q) use ($data) {
+        $q->where('courses.id', $data['course_id'])
+        ->where('status', config('constants.course_status_by_text.active'));
+      })->exists();
+    } catch (\Exception $e) {
+      // Log detailed error and rethrow so controller can return 500 (and we have trace)
+      Log::error('CourseServices::addReviews - isBought check failed', ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'data' => $data, 'user_id' => $userId]);
+      throw $e;
+    }
 
     Log::info('CourseServices::addReviews - isBought', ['user_id' => $userId, 'course_id' => $data['course_id'], 'isBought' => $isBought]);
 
@@ -745,7 +750,7 @@ class CourseServices
         'rate' => $data['rate']
       ]);
     } catch (\Exception $e) {
-      Log::error('CourseServices::addReviews - create failed', ['exception' => $e->getMessage(), 'data' => $data]);
+      Log::error('CourseServices::addReviews - create failed', ['exception' => $e->getMessage(), 'trace' => method_exists($e, 'getTraceAsString') ? $e->getTraceAsString() : null, 'data' => $data]);
       return false;
     }
 

@@ -103,10 +103,11 @@ class CourseController extends Controller
 
       $request->validate([
         "comment" => 'required',
-        "rate" => 'required'
+        // ensure numeric and in sensible range
+        "rate" => 'required|numeric|min:1|max:5'
       ]);
 
-      Log::info('addReviews validated payload', ['comment' => $request->comment, 'rate' => $request->rate]);
+      Log::info('addReviews validated payload', ['comment' => $request->comment, 'rate' => $request->rate, 'course_id' => $id, 'user_id' => auth('customer')->id()]);
 
       $review = $this->courseServices->addReviews([
         'course_id' => $id,
@@ -128,17 +129,25 @@ class CourseController extends Controller
       return $this->createdSuccessResponse();
     } catch (ValidationException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      // If transaction started, rollback
-      try { DB::rollBack(); } catch (\Exception $_) {}
+  // If transaction started, rollback
+  try { DB::rollBack(); } catch (\Exception $_) {}
       return response()->json([
         'status' => 422,
         'error' => 'Validation failed.',
         'errors' => $e->errors(),
       ], 422);
-    } catch (\Throwable $e) {
+  } catch (\Throwable $e) {
       // Catch any DB connection / runtime errors and return a clearer JSON response
-      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      try { DB::rollBack(); } catch (\Exception $_) {}
+      // Log full trace + payload to help debugging
+      Log::error('addReviews - unexpected error', [
+        'exception' => $e->getMessage(),
+        'trace' => method_exists($e, 'getTraceAsString') ? $e->getTraceAsString() : null,
+        'payload' => $request->all(),
+        'course_id' => $id,
+        'user_id' => auth('customer')->id()
+      ]);
+
+  try { DB::rollBack(); } catch (\Exception $_) {}
 
       $message = 'Internal server error';
       // If app debug is enabled, return exception message to help debugging on demo
