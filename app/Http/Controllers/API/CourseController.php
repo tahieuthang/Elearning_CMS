@@ -86,80 +86,32 @@ class CourseController extends Controller
 
   public function addReviews($id, Request $request)
   {
-    // Log incoming request for debugging
-    Log::info('API addReviews called', ['course_id' => $id, 'payload' => $request->all()]);
-
-    if (!auth('customer')->check()) {
-      Log::error('addReviews unauthorized attempt', ['course_id' => $id, 'payload' => $request->all()]);
-      return response()->json([
-        'status' => 401,
-        'message' => 'Unauthorized'
-      ], 401);
-    }
-
+    DB::beginTransaction();
     try {
-      // Start DB transaction inside try so DB connection errors are caught
-      DB::beginTransaction();
-
       $request->validate([
         "comment" => 'required',
-        // ensure numeric and in sensible range
-        "rate" => 'required|numeric|min:1|max:5'
+        "rate" => 'required'
       ]);
-
-      Log::info('addReviews validated payload', ['comment' => $request->comment, 'rate' => $request->rate, 'course_id' => $id, 'user_id' => auth('customer')->id()]);
-
-      $review = $this->courseServices->addReviews([
+      $this->courseServices->addReviews([
         'course_id' => $id,
         'comment' => $request->comment,
         'rate' => $request->rate
       ]);
-
-      Log::info('addReviews service returned', ['result' => $review ? 'created' : 'false']);
-
-      if (!$review) {
-        DB::rollBack();
-        return response()->json([
-          'status' => 403,
-          'message' => 'Bạn phải mua khóa học mới được đánh giá'
-        ], 403);
-      }
-
       DB::commit();
       return $this->createdSuccessResponse();
     } catch (ValidationException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-  // If transaction started, rollback
-  try { DB::rollBack(); } catch (\Exception $_) {}
+      DB::rollBack();
       return response()->json([
         'status' => 422,
         'error' => 'Validation failed.',
         'errors' => $e->errors(),
-      ], 422);
-  } catch (\Throwable $e) {
-      // Catch any DB connection / runtime errors and return a clearer JSON response
-      // Log full trace + payload to help debugging
-      Log::error('addReviews - unexpected error', [
-        'exception' => $e->getMessage(),
-        'trace' => method_exists($e, 'getTraceAsString') ? $e->getTraceAsString() : null,
-        'payload' => $request->all(),
-        'course_id' => $id,
-        'user_id' => auth('customer')->id()
-      ]);
-
-  try { DB::rollBack(); } catch (\Exception $_) {}
-
-      $message = 'Internal server error';
-      // If app debug is enabled, return exception message to help debugging on demo
-      if (config('app.debug')) {
-        $message = $e->getMessage();
-      }
-
-      return response()->json([
-        'status' => 500,
-        'error' => $message
-      ], 500);
-    }
+      ], 422); 
+    } catch (\Exception $e) {
+      DB::rollBack();
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e->getMessage());
+      return $this->internalServerErrorResponse();
+    } 
   }
 
   public function getCategoryBestOfUser() {

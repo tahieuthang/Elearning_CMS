@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Schema;
 
 class Course extends Model
 {
@@ -53,17 +52,10 @@ class Course extends Model
     $ratingStats = $this->reviews()
       ->selectRaw('AVG(rate) as average, COUNT(*) as count')
       ->first();
-    // Only attempt to update if the columns exist in DB (migration may not have run)
-    $updates = [];
-    if (Schema::hasColumn($this->getTable(), 'rating_average')) {
-      $updates['rating_average'] = round($ratingStats->average ?? 0, 2);
-    }
-    if (Schema::hasColumn($this->getTable(), 'rating_count')) {
-      $updates['rating_count'] = $ratingStats->count ?? 0;
-    }
-
-    if (!empty($updates)) {
-      $this->update($updates);
-    }
+    
+    $this->update([
+      'rating_average' => round($ratingStats->average ?? 0, 2),
+      'rating_count' => $ratingStats->count ?? 0
+    ]);
   }
 }
