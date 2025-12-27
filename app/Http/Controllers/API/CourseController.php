@@ -97,8 +97,10 @@ class CourseController extends Controller
       ], 401);
     }
 
-    DB::beginTransaction();
     try {
+      // Start DB transaction inside try so DB connection errors are caught
+      DB::beginTransaction();
+
       $request->validate([
         "comment" => 'required',
         "rate" => 'required'
@@ -126,17 +128,29 @@ class CourseController extends Controller
       return $this->createdSuccessResponse();
     } catch (ValidationException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      DB::rollBack();
+      // If transaction started, rollback
+      try { DB::rollBack(); } catch (\Exception $_) {}
       return response()->json([
         'status' => 422,
         'error' => 'Validation failed.',
         'errors' => $e->errors(),
-      ], 422); 
-    } catch (\Exception $e) {
+      ], 422);
+    } catch (\Throwable $e) {
+      // Catch any DB connection / runtime errors and return a clearer JSON response
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      DB::rollBack();
-      return $this->internalServerErrorResponse();
-    } 
+      try { DB::rollBack(); } catch (\Exception $_) {}
+
+      $message = 'Internal server error';
+      // If app debug is enabled, return exception message to help debugging on demo
+      if (config('app.debug')) {
+        $message = $e->getMessage();
+      }
+
+      return response()->json([
+        'status' => 500,
+        'error' => $message
+      ], 500);
+    }
   }
 
   public function getCategoryBestOfUser() {
