@@ -1,0 +1,4 @@
+allowBuilds:
+  '@parcel/watcher': true
+  bootstrap-fileinput: true
+  esbuild: true
