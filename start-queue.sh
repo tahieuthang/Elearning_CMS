@@ -20,4 +20,4 @@ if [ $counter -ge $max_attempts ]; then
 fi
 
 echo "✅ Database đã sẵn sàng, chạy queue worker..."
-php artisan queue:work --tries=3 --timeout=90
+php -d memory_limit=1G artisan queue:work --tries=3 --timeout=90

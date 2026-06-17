@@ -24,7 +24,11 @@ class Course extends Model
   }
   public function videos()
   {
-    return $this->hasMany(CourseVideo::class);
+    return $this->hasMany(CourseVideo::class)->orderBy('order', 'asc');
+  }
+  public function quizzes()
+  {
+    return $this->hasMany(Quiz::class, 'course_id')->orderBy('order', 'asc');
   }
   public function orders()
   {
@@ -40,7 +44,7 @@ class Course extends Model
   }
   public static function getCourseRelationShipById($id)
   {
-    $course = Course::with('courseCategories', 'courseTags', 'videos')->find($id);
+    $course = Course::with('courseCategories', 'courseTags', 'videos', 'quizzes.questions.options')->find($id);
     return $course;
   }
   

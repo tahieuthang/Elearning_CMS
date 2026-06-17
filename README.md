@@ -197,8 +197,8 @@ docker compose -f docker-compose.dev.yml exec app php artisan migrate --force
 docker compose -f docker-compose.dev.yml exec app php artisan db:seed
 
 # 6. Build frontend assets
-npm install
-npm run build
+pnpm install
+pnpm run build
 
 # 7. Truy cập ứng dụng
 # CMS: http://localhost:8081
@@ -213,7 +213,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate
 php artisan db:seed
-npm install && npm run build
+pnpm install && pnpm run build
 php artisan serve
 ```
 

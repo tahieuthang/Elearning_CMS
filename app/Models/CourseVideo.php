@@ -12,6 +12,8 @@ class CourseVideo extends Model
     'video_title',
     'video_description',
     'vimeo_id',
+    'video_thumbnail',
+    'order',
     'created_at',
     'updated_at',
   ];

@@ -84,13 +84,13 @@ Laravel sử dụng Vite để build CSS/JS. Cần build assets trước khi s�
 
 ```bash
 # Cài đặt Node.js dependencies
-npm install
+pnpm install
 
 # Build assets cho production
-npm run build
+pnpm run build
 
 # Hoặc chạy dev server (tự động rebuild khi có thay đổi)
-npm run dev
+pnpm run dev
 ```
 
 **Cách 2: Build trong Docker container (nếu container có Node.js)**
@@ -98,14 +98,14 @@ npm run dev
 Nếu Dockerfile đã có Node.js, có thể build trong container:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec app npm install
-docker compose -f docker-compose.dev.yml exec app npm run build
+docker compose -f docker-compose.dev.yml exec app pnpm install
+docker compose -f docker-compose.dev.yml exec app pnpm run build
 ```
 
 **Lưu ý:**
 - Sau khi build, file `public/build/manifest.json` sẽ được tạo
 - Nếu không build, sẽ gặp lỗi "Vite manifest not found"
-- Trong môi trường dev, có thể dùng `npm run dev` để tự động rebuild
+- Trong môi trường dev, có thể dùng `pnpm run dev` để tự động rebuild
 
 ### Bước 6: Cài đặt dependencies (nếu cần)
 

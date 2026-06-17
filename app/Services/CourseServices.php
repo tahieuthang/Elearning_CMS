@@ -222,7 +222,49 @@ class CourseServices
           CourseTag::insert($dataTags);
         }
       }
-      if (!empty($formData['video-list'])) {
+      if (!empty($formData['curriculum-list'])) {
+        $curriculumList = json_decode($formData['curriculum-list'], true);
+        if (!empty($curriculumList)) {
+          foreach ($curriculumList as $index => $item) {
+            if ($item['type'] === 'video') {
+              CourseVideo::create([
+                'course_id' => $courseId,
+                'video_title' => $item['epTitle'] ?? '',
+                'video_description' => $item['epDescription'] ?? '',
+                'vimeo_id' => $item['vimeoId'] ?? 0,
+                'video_thumbnail' => $item['epThumbnail'] ?? '',
+                'order' => $index,
+              ]);
+            } elseif ($item['type'] === 'quiz') {
+              $quiz = \App\Models\Quiz::create([
+                'course_id' => $courseId,
+                'title' => $item['title'] ?? '',
+                'description' => $item['description'] ?? '',
+                'order' => $index,
+              ]);
+              if (!empty($item['questions'])) {
+                foreach ($item['questions'] as $qIndex => $qItem) {
+                  $question = \App\Models\QuizQuestion::create([
+                    'quiz_id' => $quiz->id,
+                    'question_text' => $qItem['question_text'] ?? '',
+                    'type' => $qItem['type'] ?? 'single',
+                    'order' => $qIndex,
+                  ]);
+                  if (!empty($qItem['options'])) {
+                    foreach ($qItem['options'] as $oItem) {
+                      \App\Models\QuizOption::create([
+                        'question_id' => $question->id,
+                        'option_text' => $oItem['option_text'] ?? '',
+                        'is_correct' => filter_var($oItem['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                      ]);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } elseif (!empty($formData['video-list'])) {
         $videoDataToSave = [];
         $videoList = json_decode($formData['video-list']);
         if (!empty($videoList)) {
@@ -321,23 +363,74 @@ class CourseServices
       }
 
       CourseVideo::where('course_id', $id)->delete();
-        if(!empty($formData['video-list'])) {
-          $courseVideoData = [];
-          $videoList = json_decode($formData['video-list']);
-          if(!empty($videoList)) {
-            foreach($videoList as $video) {
-              $courseVideoData[] = [
+      $existingQuizIds = \App\Models\Quiz::where('course_id', $id)->pluck('id');
+      if ($existingQuizIds->isNotEmpty()) {
+        \App\Models\QuizOption::whereIn('question_id', function($q) use ($existingQuizIds) {
+            $q->select('id')->from('quiz_questions')->whereIn('quiz_id', $existingQuizIds);
+        })->delete();
+        \App\Models\QuizQuestion::whereIn('quiz_id', $existingQuizIds)->delete();
+        \App\Models\Quiz::where('course_id', $id)->delete();
+      }
+
+      if (!empty($formData['curriculum-list'])) {
+        $curriculumList = json_decode($formData['curriculum-list'], true);
+        if (!empty($curriculumList)) {
+          foreach ($curriculumList as $index => $item) {
+            if ($item['type'] === 'video') {
+              CourseVideo::create([
                 'course_id' => $id,
-                'video_title' => $video->epTitle,
-                'video_description' => $video->epDescription,
-                'vimeo_id' => $video->vimeoId,
-                'video_thumbnail' => $video->epThumbnail,
-                'updated_at' => Carbon::now()->toDateTimeString(),
-              ];
+                'video_title' => $item['epTitle'] ?? '',
+                'video_description' => $item['epDescription'] ?? '',
+                'vimeo_id' => $item['vimeoId'] ?? 0,
+                'video_thumbnail' => $item['epThumbnail'] ?? '',
+                'order' => $index,
+              ]);
+            } elseif ($item['type'] === 'quiz') {
+              $quiz = \App\Models\Quiz::create([
+                'course_id' => $id,
+                'title' => $item['title'] ?? '',
+                'description' => $item['description'] ?? '',
+                'order' => $index,
+              ]);
+              if (!empty($item['questions'])) {
+                foreach ($item['questions'] as $qIndex => $qItem) {
+                  $question = \App\Models\QuizQuestion::create([
+                    'quiz_id' => $quiz->id,
+                    'question_text' => $qItem['question_text'] ?? '',
+                    'type' => $qItem['type'] ?? 'single',
+                    'order' => $qIndex,
+                  ]);
+                  if (!empty($qItem['options'])) {
+                    foreach ($qItem['options'] as $oItem) {
+                      \App\Models\QuizOption::create([
+                        'question_id' => $question->id,
+                        'option_text' => $oItem['option_text'] ?? '',
+                        'is_correct' => filter_var($oItem['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                      ]);
+                    }
+                  }
+                }
+              }
             }
-            CourseVideo::insert($courseVideoData);
           }
         }
+      } elseif(!empty($formData['video-list'])) {
+        $courseVideoData = [];
+        $videoList = json_decode($formData['video-list']);
+        if(!empty($videoList)) {
+          foreach($videoList as $video) {
+            $courseVideoData[] = [
+              'course_id' => $id,
+              'video_title' => $video->epTitle,
+              'video_description' => $video->epDescription,
+              'vimeo_id' => $video->vimeoId,
+              'video_thumbnail' => $video->epThumbnail,
+              'updated_at' => Carbon::now()->toDateTimeString(),
+            ];
+          }
+          CourseVideo::insert($courseVideoData);
+        }
+      }
       DB::commit();
       return [
         'status' => true,
@@ -511,7 +604,8 @@ class CourseServices
       $results = Course::select($selectColumns)->with([
         'courseCategories:id,category_name',
         'courseTags:id,tag_name',
-        'videos'
+        'videos',
+        'quizzes.questions.options'
       ]);
       $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
       $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
@@ -548,45 +642,59 @@ class CourseServices
   public function formatCourseData($courseList)
   {
     $customerInfo = auth('customer')->user();
-    if (empty($customerInfo)) {
-      foreach ($courseList as &$course) {
-        $course->is_bought = false;
-        if ($course->original_price === $course->sale_off_price) {
+    $courseData = [];
+
+    if (!empty($customerInfo)) {
+      $orderByUserList = Order::where([
+        ['customer_id', $customerInfo->id],
+        ['status', config('constants.order_status.completed')],
+      ])->with([
+        'courses' => function ($q) {
+          $q->where('status', config('constants.course_status_by_text.active'));
+        }
+      ])->get()->toArray();
+
+      foreach ($orderByUserList as $orderByUser) {
+        if (empty($orderByUser['course'])) {
           continue;
         }
-        $course->videos = $this->__removeVideo($course->videos, true);
-      }
-      return $courseList;
-    }
-
-    $courseData = [];
-    $orderByUserList = Order::where([
-      ['customer_id', $customerInfo->id],
-      ['status', config('constants.order_status.completed')],
-    ])->with([
-      'courses' => function ($q) {
-        $q->where('status', config('constants.course_status_by_text.active'));
-      }
-    ])->get()->toArray();
-
-    foreach ($orderByUserList as $orderByUser) {
-      if (empty($orderByUser['course'])) {
-        continue;
-      }
-      foreach ($orderByUser['course'] as $courseItem) {
-        $courseData[] = $courseItem['id'];
+        foreach ($orderByUser['course'] as $courseItem) {
+          $courseData[] = $courseItem['id'];
+        }
       }
     }
 
     foreach ($courseList as &$course) {
       $course->is_bought = in_array($course->id, $courseData);
-      if ($course->original_price === $course->sale_off_price) {
-        continue;
+      $isFree = ($course->original_price == 0 && $course->sale_off_price == 0) || ($course->original_price === $course->sale_off_price);
+      $hasAccess = $course->is_bought || $isFree;
+
+      if (!$hasAccess) {
+        $course->videos = $this->__removeVideo($course->videos, true);
+        if ($course->quizzes) {
+          foreach ($course->quizzes as $quiz) {
+            foreach ($quiz->questions as $question) {
+              foreach ($question->options as $option) {
+                unset($option->is_correct);
+              }
+            }
+          }
+        }
       }
 
-      if (!$course->is_bought) {
-        $course->videos = $this->__removeVideo($course->videos, true);
+      // Build merged, ordered curriculum for each course in the list
+      $videos = $course->videos ?? collect();
+      $quizzes = $course->quizzes ?? collect();
+      $curriculum = collect();
+      foreach ($videos as $video) {
+        $video->type = 'video';
+        $curriculum->push($video);
       }
+      foreach ($quizzes as $quiz) {
+        $quiz->type = 'quiz';
+        $curriculum->push($quiz);
+      }
+      $course->curriculum = $curriculum->sortBy('order')->values()->all();
     }
 
     return $courseList;
@@ -621,7 +729,8 @@ class CourseServices
       ->with([
         'courseCategories:id,category_name',
         'courseTags:id,tag_name',
-        'videos'
+        'videos',
+        'quizzes.questions.options'
       ])
       ->where('id', $id)
       ->first();
@@ -645,8 +754,37 @@ class CourseServices
       if($isBought) {
         $courseDetail->is_bought = $isBought;
       }
-      $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
     }
+
+    $isFree = ($courseDetail->original_price == 0 && $courseDetail->sale_off_price == 0) || ($courseDetail->original_price === $courseDetail->sale_off_price);
+    $hasAccess = $courseDetail->is_bought || $isFree;
+
+    if (!$hasAccess) {
+      $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
+      if ($courseDetail->quizzes) {
+        foreach ($courseDetail->quizzes as $quiz) {
+          foreach ($quiz->questions as $question) {
+            foreach ($question->options as $option) {
+              unset($option->is_correct);
+            }
+          }
+        }
+      }
+    }
+
+    // Build merged, ordered curriculum
+    $videos = $courseDetail->videos ?? collect();
+    $quizzes = $courseDetail->quizzes ?? collect();
+    $curriculum = collect();
+    foreach ($videos as $video) {
+      $video->type = 'video';
+      $curriculum->push($video);
+    }
+    foreach ($quizzes as $quiz) {
+      $quiz->type = 'quiz';
+      $curriculum->push($quiz);
+    }
+    $courseDetail->curriculum = $curriculum->sortBy('order')->values()->all();
 
     return $courseDetail;
   }
