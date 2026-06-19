@@ -133,4 +133,14 @@ class CourseController extends Controller
       return $this->internalServerErrorResponse();
     }
   }
+
+  public function getCategories() {
+    try {
+      $categories = \App\Models\PostCategory::select('id', 'category_name')->get();
+      return $this->successResponse($categories);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
 }
