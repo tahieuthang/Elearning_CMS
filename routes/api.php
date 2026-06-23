@@ -70,6 +70,7 @@ Route::group(['prefix' => 'course'], function () {
     Route::post('/review/add/{id}', [CourseController::class, 'addReviews']);
     Route::get('/customer/best-category', [CourseController::class, 'getCategoryBestOfUser']);
     Route::get('/notifications/new-courses/{id}', [CourseController::class, 'getNewCourses']);
+    Route::post('/quiz/submit/{id}', [CourseController::class, 'submitQuiz']);
   });
 });
 

@@ -643,6 +643,7 @@ class CourseServices
   {
     $customerInfo = auth('customer')->user();
     $courseData = [];
+    $completedQuizIds = [];
 
     if (!empty($customerInfo)) {
       $orderByUserList = Order::where([
@@ -655,31 +656,27 @@ class CourseServices
       ])->get()->toArray();
 
       foreach ($orderByUserList as $orderByUser) {
-        if (empty($orderByUser['course'])) {
+        if (empty($orderByUser['courses'])) {
           continue;
         }
-        foreach ($orderByUser['course'] as $courseItem) {
+        foreach ($orderByUser['courses'] as $courseItem) {
           $courseData[] = $courseItem['id'];
         }
       }
+
+      $completedQuizIds = \App\Models\CustomerQuiz::where('customer_id', $customerInfo->id)
+        ->where('is_passed', true)
+        ->pluck('quiz_id')
+        ->toArray();
     }
 
     foreach ($courseList as &$course) {
       $course->is_bought = in_array($course->id, $courseData);
-      $isFree = ($course->original_price == 0 && $course->sale_off_price == 0) || ($course->original_price === $course->sale_off_price);
+      $isFree = $course->original_price == 0 && $course->sale_off_price == 0;
       $hasAccess = $course->is_bought || $isFree;
 
       if (!$hasAccess) {
         $course->videos = $this->__removeVideo($course->videos, true);
-        if ($course->quizzes) {
-          foreach ($course->quizzes as $quiz) {
-            foreach ($quiz->questions as $question) {
-              foreach ($question->options as $option) {
-                unset($option->is_correct);
-              }
-            }
-          }
-        }
       }
 
       // Build merged, ordered curriculum for each course in the list
@@ -692,6 +689,8 @@ class CourseServices
       }
       foreach ($quizzes as $quiz) {
         $quiz->type = 'quiz';
+        $quiz->is_passed = in_array($quiz->id, $completedQuizIds);
+        $quiz->is_completed = in_array($quiz->id, $completedQuizIds);
         $curriculum->push($quiz);
       }
       $course->curriculum = $curriculum->sortBy('order')->values()->all();
@@ -740,6 +739,7 @@ class CourseServices
 
     $customerInfo = auth('customer')->user();
     $courseDetail->is_bought = false;
+    $completedQuizIds = [];
 
     if ($customerInfo) {
       $isBought = Order::where([
@@ -754,22 +754,18 @@ class CourseServices
       if($isBought) {
         $courseDetail->is_bought = $isBought;
       }
+
+      $completedQuizIds = \App\Models\CustomerQuiz::where('customer_id', $customerInfo->id)
+        ->where('is_passed', true)
+        ->pluck('quiz_id')
+        ->toArray();
     }
 
-    $isFree = ($courseDetail->original_price == 0 && $courseDetail->sale_off_price == 0) || ($courseDetail->original_price === $courseDetail->sale_off_price);
+    $isFree = $courseDetail->original_price == 0 && $courseDetail->sale_off_price == 0;
     $hasAccess = $courseDetail->is_bought || $isFree;
 
     if (!$hasAccess) {
       $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
-      if ($courseDetail->quizzes) {
-        foreach ($courseDetail->quizzes as $quiz) {
-          foreach ($quiz->questions as $question) {
-            foreach ($question->options as $option) {
-              unset($option->is_correct);
-            }
-          }
-        }
-      }
     }
 
     // Build merged, ordered curriculum
@@ -782,6 +778,8 @@ class CourseServices
     }
     foreach ($quizzes as $quiz) {
       $quiz->type = 'quiz';
+      $quiz->is_passed = in_array($quiz->id, $completedQuizIds);
+      $quiz->is_completed = in_array($quiz->id, $completedQuizIds);
       $curriculum->push($quiz);
     }
     $courseDetail->curriculum = $curriculum->sortBy('order')->values()->all();
@@ -926,5 +924,27 @@ class CourseServices
         'message' => $e->getMessage()
       ];
     }
+  }
+
+  public function submitQuiz($id, $data)
+  {
+    $quiz = \App\Models\Quiz::findOrFail($id);
+    $customer = auth('customer')->user();
+
+    $customerQuiz = \App\Models\CustomerQuiz::updateOrCreate(
+      [
+        'customer_id' => $customer->id,
+        'quiz_id' => $id,
+      ],
+      [
+        'is_passed' => $data['isPassed'],
+      ]
+    );
+
+    return [
+      'quiz_id' => $quiz->id,
+      'is_passed' => $customerQuiz->is_passed,
+      'is_completed' => $customerQuiz->is_passed,
+    ];
   }
 }

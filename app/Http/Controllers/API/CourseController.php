@@ -143,4 +143,27 @@ class CourseController extends Controller
       return $this->internalServerErrorResponse();
     }
   }
+
+  public function submitQuiz($id, Request $request)
+  {
+    try {
+      $request->validate([
+        'isPassed' => 'required|boolean',
+      ]);
+      $data = $this->courseServices->submitQuiz($id, $request->all());
+      return $this->successResponse($data);
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return response()->json([
+        'status' => 422,
+        'error' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+      return $this->notFoundErrorResponse();
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
 }
