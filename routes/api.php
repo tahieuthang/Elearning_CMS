@@ -64,12 +64,15 @@ Route::group(['prefix' => 'course'], function () {
   Route::get('/detail/{id}', [CourseController::class, 'getCourseDetail']); //ok
   Route::get('/top', [CourseController::class, 'getCourseTop']); //ok
   Route::get('/categories', [CourseController::class, 'getCategories']);
+  Route::get('/tags', [CourseController::class, 'getTags']);
   Route::get('/reiview/{id}', [CourseController::class, 'getReviewByCourse']);
 
   Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
     Route::post('/review/add/{id}', [CourseController::class, 'addReviews']);
     Route::get('/customer/best-category', [CourseController::class, 'getCategoryBestOfUser']);
     Route::get('/notifications/new-courses/{id}', [CourseController::class, 'getNewCourses']);
+    Route::post('/video/progress', [CourseController::class, 'postVideoProgress']);
+    Route::post('/quiz/submit', [CourseController::class, 'submitQuiz']);
   });
 });
 

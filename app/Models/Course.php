@@ -16,7 +16,7 @@ class Course extends Model
 
   public function courseTags()
   {
-    return $this->belongsToMany(Tag::class, 'course_tags');
+    return $this->belongsToMany(Tag::class, 'course_tags')->distinct();
   }
   public function courseCategories()
   {

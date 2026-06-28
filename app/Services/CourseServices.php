@@ -610,6 +610,24 @@ class CourseServices
       $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
       $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
 
+      $customerInfo = auth('customer')->user();
+      $myCourses = filter_var($filterData['my_courses'] ?? false, FILTER_VALIDATE_BOOLEAN);
+      if ($myCourses && $customerInfo) {
+        $purchasedCourseIds = DB::table('order_items')
+          ->join('orders', 'order_items.order_id', '=', 'orders.id')
+          ->where('orders.customer_id', $customerInfo->id)
+          ->where('orders.status', config('constants.order_status.completed'))
+          ->pluck('course_id')
+          ->toArray();
+
+        $progressCourseIds = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
+          ->pluck('course_id')
+          ->toArray();
+
+        $myCourseIds = array_unique(array_merge($purchasedCourseIds, $progressCourseIds));
+        $results->whereIn('courses.id', $myCourseIds);
+      }
+
       if (!empty($filterData['status'])) {
         $results->whereIn('status', $filterData['status']);
       }
@@ -624,6 +642,20 @@ class CourseServices
         $results->whereHas('courseTags', function ($q) use ($filterData) {
           $q->whereIn('tag_name', $filterData['tag_name']);
         });
+      }
+
+      if (!empty($filterData['rating_average'])) {
+        $results->where('rating_average', '>=', $filterData['rating_average']);
+      }
+
+      if (!empty($filterData['sort_by'])) {
+        if ($filterData['sort_by'] === 'price-low') {
+          $results->orderBy('sale_off_price', 'asc');
+        } elseif ($filterData['sort_by'] === 'price-high') {
+          $results->orderBy('sale_off_price', 'desc');
+        } elseif ($filterData['sort_by'] === 'rating') {
+          $results->orderBy('rating_average', 'desc');
+        }
       }
 
       if (isset($filterData['keyword'])) {
@@ -666,7 +698,7 @@ class CourseServices
 
     foreach ($courseList as &$course) {
       $course->is_bought = in_array($course->id, $courseData);
-      $isFree = ($course->original_price == 0 && $course->sale_off_price == 0) || ($course->original_price === $course->sale_off_price);
+      $isFree = ($course->original_price == 0 && $course->sale_off_price == 0) || ($course->original_price == $course->sale_off_price);
       $hasAccess = $course->is_bought || $isFree;
 
       if (!$hasAccess) {
@@ -680,6 +712,14 @@ class CourseServices
             }
           }
         }
+      }
+
+      $course->progress_percent = 0;
+      if ($customerInfo) {
+        $courseProgress = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
+          ->where('course_id', $course->id)
+          ->first();
+        $course->progress_percent = $courseProgress ? $courseProgress->progress_percent : 0;
       }
 
       // Build merged, ordered curriculum for each course in the list
@@ -740,6 +780,7 @@ class CourseServices
 
     $customerInfo = auth('customer')->user();
     $courseDetail->is_bought = false;
+    $courseDetail->progress_percent = 0;
 
     if ($customerInfo) {
       $isBought = Order::where([
@@ -754,9 +795,14 @@ class CourseServices
       if($isBought) {
         $courseDetail->is_bought = $isBought;
       }
+
+      $courseProgress = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
+        ->where('course_id', $id)
+        ->first();
+      $courseDetail->progress_percent = $courseProgress ? $courseProgress->progress_percent : 0;
     }
 
-    $isFree = ($courseDetail->original_price == 0 && $courseDetail->sale_off_price == 0) || ($courseDetail->original_price === $courseDetail->sale_off_price);
+    $isFree = ($courseDetail->original_price == 0 && $courseDetail->sale_off_price == 0) || ($courseDetail->original_price == $courseDetail->sale_off_price);
     $hasAccess = $courseDetail->is_bought || $isFree;
 
     if (!$hasAccess) {
@@ -772,16 +818,34 @@ class CourseServices
       }
     }
 
+    $completedVideoIds = [];
+    $completedQuizIds = [];
+    if ($customerInfo) {
+      $completedVideoIds = \App\Models\CustomerVideoProgress::where('customer_id', $customerInfo->id)
+        ->where('course_id', $id)
+        ->where('is_completed', true)
+        ->pluck('course_video_id')
+        ->toArray();
+
+      $completedQuizIds = \App\Models\CustomerQuizProgress::where('customer_id', $customerInfo->id)
+        ->where('course_id', $id)
+        ->where('is_completed', true)
+        ->pluck('quiz_id')
+        ->toArray();
+    }
+
     // Build merged, ordered curriculum
     $videos = $courseDetail->videos ?? collect();
     $quizzes = $courseDetail->quizzes ?? collect();
     $curriculum = collect();
     foreach ($videos as $video) {
       $video->type = 'video';
+      $video->is_completed = in_array($video->id, $completedVideoIds);
       $curriculum->push($video);
     }
     foreach ($quizzes as $quiz) {
       $quiz->type = 'quiz';
+      $quiz->is_completed = in_array($quiz->id, $completedQuizIds);
       $curriculum->push($quiz);
     }
     $courseDetail->curriculum = $curriculum->sortBy('order')->values()->all();
@@ -926,5 +990,164 @@ class CourseServices
         'message' => $e->getMessage()
       ];
     }
+  }
+
+  /**
+   * Update the overall course progress percentage for a customer.
+   */
+  public function updateCourseProgress($customerId, $courseId)
+  {
+    $totalVideos = CourseVideo::where('course_id', $courseId)->count();
+    $totalQuizzes = \App\Models\Quiz::where('course_id', $courseId)->count();
+    $totalItems = $totalVideos + $totalQuizzes;
+
+    if ($totalItems === 0) {
+      $progressPercent = 0;
+    } else {
+      $completedVideos = \App\Models\CustomerVideoProgress::where('customer_id', $customerId)
+        ->where('course_id', $courseId)
+        ->where('is_completed', true)
+        ->count();
+
+      $completedQuizzes = \App\Models\CustomerQuizProgress::where('customer_id', $customerId)
+        ->where('course_id', $courseId)
+        ->where('is_completed', true)
+        ->count();
+
+      $progressPercent = (int) round((($completedVideos + $completedQuizzes) / $totalItems) * 100);
+      $progressPercent = min(100, max(0, $progressPercent));
+    }
+
+    \App\Models\CustomerCourseProgress::updateOrCreate(
+      [
+        'customer_id' => $customerId,
+        'course_id' => $courseId,
+      ],
+      [
+        'progress_percent' => $progressPercent,
+      ]
+    );
+
+    return $progressPercent;
+  }
+
+  /**
+   * Save progress for a video and update overall course progress.
+   */
+  public function trackVideoProgress($customerId, $courseVideoId, $watchedSeconds, $totalSeconds, $isCompletedInput = null)
+  {
+    $courseVideo = CourseVideo::findOrFail($courseVideoId);
+    $courseId = $courseVideo->course_id;
+
+    $progress = \App\Models\CustomerVideoProgress::firstOrNew([
+      'customer_id' => $customerId,
+      'course_video_id' => $courseVideoId,
+    ]);
+
+    $progress->course_id = $courseId;
+    $progress->total_seconds = max($progress->total_seconds, $totalSeconds);
+    $progress->watched_seconds = max($progress->watched_seconds, $watchedSeconds);
+
+    if ($progress->total_seconds > 0 && $progress->watched_seconds >= $progress->total_seconds) {
+      $progress->is_completed = true;
+    }
+
+    if ($isCompletedInput === true || $isCompletedInput === 1 || $isCompletedInput === 'true') {
+      $progress->is_completed = true;
+      if ($progress->total_seconds > 0) {
+        $progress->watched_seconds = $progress->total_seconds;
+      }
+    }
+
+    $progress->save();
+
+    // Recalculate course progress
+    $courseProgressPercent = $this->updateCourseProgress($customerId, $courseId);
+
+    return [
+      'video_progress' => $progress,
+      'course_progress_percent' => $courseProgressPercent,
+    ];
+  }
+
+  /**
+   * Submit quiz answers, evaluate, update progress, and recalculate course progress.
+   */
+  public function submitQuiz($customerId, $quizId, array $answersInput)
+  {
+    $quiz = \App\Models\Quiz::with(['questions.options'])->findOrFail($quizId);
+    $courseId = $quiz->course_id;
+
+    $totalQuestions = $quiz->questions->count();
+    $correctCount = 0;
+    $questionDetails = [];
+
+    // Map answersInput by question_id for quick lookup
+    $userAnswers = [];
+    foreach ($answersInput as $ans) {
+      if (is_array($ans) && isset($ans['question_id'])) {
+        $qId = $ans['question_id'];
+        $selIds = [];
+        if (isset($ans['selected_option_ids']) && is_array($ans['selected_option_ids'])) {
+          $selIds = array_map('intval', $ans['selected_option_ids']);
+        } elseif (isset($ans['selected_option_id'])) {
+          $selIds = [intval($ans['selected_option_id'])];
+        }
+        $userAnswers[$qId] = $selIds;
+      }
+    }
+
+    foreach ($quiz->questions as $question) {
+      $correctOptionIds = $question->options->where('is_correct', true)->pluck('id')->toArray();
+      $selectedOptionIds = isset($userAnswers[$question->id]) ? $userAnswers[$question->id] : [];
+
+      // Compare correct option IDs with selected option IDs
+      sort($correctOptionIds);
+      sort($selectedOptionIds);
+      
+      $isCorrect = false;
+      if (count($correctOptionIds) > 0) {
+        $isCorrect = ($correctOptionIds === $selectedOptionIds);
+      }
+      
+      if ($isCorrect) {
+        $correctCount++;
+      }
+
+      $questionDetails[] = [
+        'question_id' => $question->id,
+        'question_text' => $question->question_text,
+        'is_correct' => $isCorrect,
+        'correct_option_ids' => $correctOptionIds,
+        'selected_option_ids' => $selectedOptionIds,
+      ];
+    }
+
+    $isQuizCompleted = ($totalQuestions > 0 && $correctCount === $totalQuestions);
+
+    // Mark quiz as completed
+    $progress = \App\Models\CustomerQuizProgress::updateOrCreate(
+      [
+        'customer_id' => $customerId,
+        'quiz_id' => $quizId,
+      ],
+      [
+        'course_id' => $courseId,
+        'is_completed' => $isQuizCompleted,
+      ]
+    );
+
+    // Recalculate course progress
+    $courseProgressPercent = $this->updateCourseProgress($customerId, $courseId);
+
+    return [
+      'quiz_id' => $quizId,
+      'total_questions' => $totalQuestions,
+      'correct_questions' => $correctCount,
+      'score_percent' => $totalQuestions > 0 ? (int) round(($correctCount / $totalQuestions) * 100) : 0,
+      'is_completed' => $isQuizCompleted,
+      'course_progress_percent' => $courseProgressPercent,
+      'details' => $questionDetails,
+    ];
   }
 }
