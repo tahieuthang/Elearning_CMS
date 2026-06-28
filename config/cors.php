@@ -19,11 +19,7 @@ return [
 
   'allowed_methods' => ['*'], // Các HTTP method được phép (GET, POST, PUT,...)
 
-  'allowed_origins' => [
-    'https://elearning-landing.netlify.app', 
-    'http://localhost:5173',
-    'https://marth-venerative-ferally.ngrok-free.dev', // Thêm trực tiếp để test
-  ], // Domain được phép truy cập
+  'allowed_origins' => ['*'], // Domain được phép truy cập
 
   // Pattern cho ngrok URLs (vì ngrok URL thay đổi mỗi lần restart)
   'allowed_origins_patterns' => [

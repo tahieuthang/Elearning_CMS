@@ -75,12 +75,12 @@ class CustomerController extends Controller
         'errors' => $e->errors(),
       ], 422);
     } catch (\Exception $e) {
-      dd($e);
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
       return response()->json([
         'status' => 500,
         'error' => 'An error occurred while registering the customer.',
+        'message' => $e->getMessage(),
       ], 500);
     }
   }
