@@ -32,7 +32,7 @@ return [
 
   'exposed_headers' => [], // Các header được phép hiển thị ở client
 
-  'max_age' => 0, // Thời gian cache (giây)
+  'max_age' => 86400 , // Thời gian cache (giây)
 
   'supports_credentials' => false, // Có cho phép cookie hoặc xác thực không
 ];
