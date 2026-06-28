@@ -19,5 +19,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/auth/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        \Sentry\Laravel\Integration::handles($exceptions);
     })->create();
