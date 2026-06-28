@@ -256,7 +256,7 @@ Authorization: Bearer {token}
 - `POST /api/payment/create` - Tạo payment URL
 - `GET /api/payment/result` - Kết quả thanh toán
 
-**Chi tiết API:** Xem [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md)
+**Chi tiết API:** Xem đặc tả chi tiết tại [swagger.json](./swagger.json) hoặc tài liệu [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md)
 
 ---
 
