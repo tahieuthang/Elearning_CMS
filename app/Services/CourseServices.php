@@ -603,9 +603,7 @@ class CourseServices
       
       $results = Course::select($selectColumns)->with([
         'courseCategories:id,category_name',
-        'courseTags:id,tag_name',
-        'videos',
-        'quizzes.questions.options'
+        'courseTags:id,tag_name'
       ]);
       $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
       $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
@@ -696,45 +694,72 @@ class CourseServices
       }
     }
 
+    // 1. Optimize N+1 query: fetch all course progress in one query
+    $courseIds = [];
+    foreach ($courseList as $course) {
+      $courseIds[] = $course->id;
+    }
+    
+    $progressData = [];
+    if ($customerInfo && !empty($courseIds)) {
+      $progressData = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
+        ->whereIn('course_id', $courseIds)
+        ->pluck('progress_percent', 'course_id')
+        ->toArray();
+    }
+
+    // 2. Optimize curriculum processing
     foreach ($courseList as &$course) {
       $course->is_bought = in_array($course->id, $courseData);
       $isFree = ($course->original_price == 0 && $course->sale_off_price == 0) || ($course->original_price == $course->sale_off_price);
       $hasAccess = $course->is_bought || $isFree;
 
-      if (!$hasAccess) {
-        $course->videos = $this->__removeVideo($course->videos, true);
-        if ($course->quizzes) {
+      // Only format videos if they are eager loaded
+      if ($course->relationLoaded('videos')) {
+        if (!$hasAccess) {
+          $course->videos = $this->__removeVideo($course->videos, true);
+        }
+      }
+
+      // Only format quizzes if they are eager loaded
+      if ($course->relationLoaded('quizzes')) {
+        if (!$hasAccess && $course->quizzes) {
           foreach ($course->quizzes as $quiz) {
-            foreach ($quiz->questions as $question) {
-              foreach ($question->options as $option) {
-                unset($option->is_correct);
+            if ($quiz->relationLoaded('questions')) {
+              foreach ($quiz->questions as $question) {
+                if ($question->relationLoaded('options')) {
+                  foreach ($question->options as $option) {
+                    unset($option->is_correct);
+                  }
+                }
               }
             }
           }
         }
       }
 
-      $course->progress_percent = 0;
-      if ($customerInfo) {
-        $courseProgress = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
-          ->where('course_id', $course->id)
-          ->first();
-        $course->progress_percent = $courseProgress ? $courseProgress->progress_percent : 0;
-      }
+      // Apply the pre-fetched progress percent
+      $course->progress_percent = $progressData[$course->id] ?? 0;
 
-      // Build merged, ordered curriculum for each course in the list
-      $videos = $course->videos ?? collect();
-      $quizzes = $course->quizzes ?? collect();
-      $curriculum = collect();
-      foreach ($videos as $video) {
-        $video->type = 'video';
-        $curriculum->push($video);
+      // Only build curriculum if either videos or quizzes are eager loaded
+      if ($course->relationLoaded('videos') || $course->relationLoaded('quizzes')) {
+        $videos = $course->relationLoaded('videos') ? ($course->videos ?? collect()) : collect();
+        $quizzes = $course->relationLoaded('quizzes') ? ($course->quizzes ?? collect()) : collect();
+        $curriculum = collect();
+        foreach ($videos as $video) {
+          $video->type = 'video';
+          $curriculum->push($video);
+        }
+        foreach ($quizzes as $quiz) {
+          $quiz->type = 'quiz';
+          $curriculum->push($quiz);
+        }
+        $course->curriculum = $curriculum->sortBy('order')->values()->all();
+      } else {
+        // If not loaded, clean up dynamic relations to reduce payload size
+        $course->unsetRelation('videos');
+        $course->unsetRelation('quizzes');
       }
-      foreach ($quizzes as $quiz) {
-        $quiz->type = 'quiz';
-        $curriculum->push($quiz);
-      }
-      $course->curriculum = $curriculum->sortBy('order')->values()->all();
     }
 
     return $courseList;
