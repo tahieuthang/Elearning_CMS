@@ -224,6 +224,31 @@ class CourseController extends Controller
         'message' => 'Validation failed.',
         'errors' => $e->errors()
       ], 422);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+      return $this->notFoundErrorResponse();
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
+
+  public function submitQuizLegacy($id, Request $request)
+  {
+    try {
+      $request->validate([
+        'isPassed' => 'required|boolean',
+      ]);
+      $data = $this->courseServices->submitQuizLegacy($id, $request->all());
+      return $this->successResponse($data);
+    } catch (ValidationException $e) {
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return response()->json([
+        'status' => 422,
+        'message' => 'Validation failed.',
+        'errors' => $e->errors(),
+      ], 422);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+      return $this->notFoundErrorResponse();
     } catch (\Exception $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();

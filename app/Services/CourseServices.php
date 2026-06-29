@@ -673,6 +673,7 @@ class CourseServices
   {
     $customerInfo = auth('customer')->user();
     $courseData = [];
+    $completedQuizIds = [];
 
     if (!empty($customerInfo)) {
       $orderByUserList = Order::where([
@@ -685,13 +686,18 @@ class CourseServices
       ])->get()->toArray();
 
       foreach ($orderByUserList as $orderByUser) {
-        if (empty($orderByUser['course'])) {
+        if (empty($orderByUser['courses'])) {
           continue;
         }
-        foreach ($orderByUser['course'] as $courseItem) {
+        foreach ($orderByUser['courses'] as $courseItem) {
           $courseData[] = $courseItem['id'];
         }
       }
+
+      $completedQuizIds = \App\Models\CustomerQuiz::where('customer_id', $customerInfo->id)
+        ->where('is_passed', true)
+        ->pluck('quiz_id')
+        ->toArray();
     }
 
     // 1. Optimize N+1 query: fetch all course progress in one query
@@ -804,7 +810,6 @@ class CourseServices
     }
 
     $customerInfo = auth('customer')->user();
-    $courseDetail->is_bought = false;
     $courseDetail->progress_percent = 0;
 
     if ($customerInfo) {
@@ -832,15 +837,6 @@ class CourseServices
 
     if (!$hasAccess) {
       $courseDetail->videos = $this->__removeVideo($courseDetail->videos ?? [], true);
-      if ($courseDetail->quizzes) {
-        foreach ($courseDetail->quizzes as $quiz) {
-          foreach ($quiz->questions as $question) {
-            foreach ($question->options as $option) {
-              unset($option->is_correct);
-            }
-          }
-        }
-      }
     }
 
     $completedVideoIds = [];
@@ -852,11 +848,18 @@ class CourseServices
         ->pluck('course_video_id')
         ->toArray();
 
-      $completedQuizIds = \App\Models\CustomerQuizProgress::where('customer_id', $customerInfo->id)
+      $completedQuizIdsLegacy = \App\Models\CustomerQuiz::where('customer_id', $customerInfo->id)
+        ->where('is_passed', true)
+        ->pluck('quiz_id')
+        ->toArray();
+
+      $completedQuizIdsAdvanced = \App\Models\CustomerQuizProgress::where('customer_id', $customerInfo->id)
         ->where('course_id', $id)
         ->where('is_completed', true)
         ->pluck('quiz_id')
         ->toArray();
+
+      $completedQuizIds = array_unique(array_merge($completedQuizIdsLegacy, $completedQuizIdsAdvanced));
     }
 
     // Build merged, ordered curriculum
@@ -870,6 +873,7 @@ class CourseServices
     }
     foreach ($quizzes as $quiz) {
       $quiz->type = 'quiz';
+      $quiz->is_passed = in_array($quiz->id, $completedQuizIds);
       $quiz->is_completed = in_array($quiz->id, $completedQuizIds);
       $curriculum->push($quiz);
     }
@@ -1173,6 +1177,28 @@ class CourseServices
       'is_completed' => $isQuizCompleted,
       'course_progress_percent' => $courseProgressPercent,
       'details' => $questionDetails,
+    ];
+  }
+
+  public function submitQuizLegacy($id, $data)
+  {
+    $quiz = \App\Models\Quiz::findOrFail($id);
+    $customer = auth('customer')->user();
+
+    $customerQuiz = \App\Models\CustomerQuiz::updateOrCreate(
+      [
+        'customer_id' => $customer->id,
+        'quiz_id' => $id,
+      ],
+      [
+        'is_passed' => $data['isPassed'],
+      ]
+    );
+
+    return [
+      'quiz_id' => $quiz->id,
+      'is_passed' => $customerQuiz->is_passed,
+      'is_completed' => $customerQuiz->is_passed,
     ];
   }
 }
