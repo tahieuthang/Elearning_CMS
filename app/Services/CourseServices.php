@@ -1038,10 +1038,21 @@ class CourseServices
         ->where('is_completed', true)
         ->count();
 
-      $completedQuizzes = \App\Models\CustomerQuizProgress::where('customer_id', $customerId)
+      $quizIds = \App\Models\Quiz::where('course_id', $courseId)->pluck('id')->toArray();
+
+      $completedQuizIdsLegacy = \App\Models\CustomerQuiz::where('customer_id', $customerId)
+        ->whereIn('quiz_id', $quizIds)
+        ->where('is_passed', true)
+        ->pluck('quiz_id')
+        ->toArray();
+
+      $completedQuizIdsAdvanced = \App\Models\CustomerQuizProgress::where('customer_id', $customerId)
         ->where('course_id', $courseId)
         ->where('is_completed', true)
-        ->count();
+        ->pluck('quiz_id')
+        ->toArray();
+
+      $completedQuizzes = count(array_unique(array_merge($completedQuizIdsLegacy, $completedQuizIdsAdvanced)));
 
       $progressPercent = (int) round((($completedVideos + $completedQuizzes) / $totalItems) * 100);
       $progressPercent = min(100, max(0, $progressPercent));
