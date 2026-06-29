@@ -23,3 +23,6 @@ yarn-error.log
 /.zed
 
 .codegraph/
+/.cache
+/.config
+/public/uploads
