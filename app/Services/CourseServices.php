@@ -1073,7 +1073,7 @@ class CourseServices
     $progress->total_seconds = max($progress->total_seconds, $totalSeconds);
     $progress->watched_seconds = max($progress->watched_seconds, $watchedSeconds);
 
-    if ($progress->total_seconds > 0 && $progress->watched_seconds >= $progress->total_seconds) {
+    if ($progress->total_seconds > 0 && $progress->watched_seconds >= ($progress->total_seconds * 0.9)) {
       $progress->is_completed = true;
     }
 
