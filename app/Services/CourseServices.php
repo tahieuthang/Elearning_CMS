@@ -732,13 +732,13 @@ class CourseServices
 
       // Only format quizzes if they are eager loaded
       if ($course->relationLoaded('quizzes')) {
-        if (!$hasAccess && $course->quizzes) {
+        if ($course->quizzes) {
           foreach ($course->quizzes as $quiz) {
             if ($quiz->relationLoaded('questions')) {
               foreach ($quiz->questions as $question) {
                 if ($question->relationLoaded('options')) {
                   foreach ($question->options as $option) {
-                    unset($option->is_correct);
+                    $option->makeHidden('is_correct');
                   }
                 }
               }
@@ -878,6 +878,15 @@ class CourseServices
       $quiz->type = 'quiz';
       $quiz->is_passed = in_array($quiz->id, $completedQuizIds);
       $quiz->is_completed = in_array($quiz->id, $completedQuizIds);
+      if ($quiz->questions) {
+        foreach ($quiz->questions as $question) {
+          if ($question->options) {
+            foreach ($question->options as $option) {
+              $option->makeHidden('is_correct');
+            }
+          }
+        }
+      }
       $curriculum->push($quiz);
     }
     $courseDetail->curriculum = $curriculum->sortBy('order')->values()->all();
