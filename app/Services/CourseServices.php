@@ -56,6 +56,9 @@ class CourseServices
         }
         return '';
       })
+      ->editColumn('created_at', function ($row) {
+        return $row->created_at ? Carbon::parse($row->created_at)->format('H:i:s d/m/Y') : '';
+      })
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('course.edit')) {
