@@ -62,6 +62,13 @@
                   <i class="fas fa-graduation-cap mr-1"></i> Chương trình học
                 </a>
               </li>
+              @if($course)
+              <li class="nav-item">
+                <a class="nav-link" id="coupon-tab" data-toggle="tab" href="#coupon-pane" role="tab" aria-controls="coupon-pane" aria-selected="false">
+                  <i class="fas fa-ticket-alt mr-1"></i> Quản lý Coupon
+                </a>
+              </li>
+              @endif
             </ul>
 
             <!-- Tabs Content -->
@@ -232,6 +239,100 @@
                   </table>
                 </div>
               </div>
+
+              @if($course)
+              <!-- Tab 4: Coupon Pane -->
+              <div class="tab-pane fade" id="coupon-pane" role="tabpanel" aria-labelledby="coupon-tab">
+                <div class="row">
+                  <!-- Column 1: Create Coupon Form -->
+                  <div class="col-md-4">
+                    <div class="card card-secondary card-outline">
+                      <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-plus-circle mr-1"></i> Tạo Coupon Mới</h3>
+                      </div>
+                      <div class="card-body">
+                        <div id="form-create-coupon">
+                          <div class="form-group mb-3">
+                            <label for="coupon-code-input" class="form-label font-weight-bold">Mã Coupon <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                              <input type="text" id="coupon-code-input" class="form-control text-uppercase" placeholder="VD: NODEJS50">
+                              <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-generate-coupon-code">
+                                  <i class="fas fa-magic"></i> Ngẫu nhiên
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="form-group mb-3">
+                            <label for="coupon-discount-type" class="form-label font-weight-bold">Loại giảm giá <span class="text-danger">*</span></label>
+                            <select id="coupon-discount-type" class="form-control">
+                              <option value="percent">Phần trăm (%)</option>
+                              <option value="fixed">Số tiền cố định (đ)</option>
+                            </select>
+                          </div>
+
+                          <div class="form-group mb-3">
+                            <label for="coupon-discount-value" class="form-label font-weight-bold">Giá trị giảm <span class="text-danger">*</span></label>
+                            <input type="number" id="coupon-discount-value" class="form-control" placeholder="VD: 50 hoặc 100000" min="0">
+                          </div>
+
+                          <div class="form-group mb-3">
+                            <label for="coupon-max-uses" class="form-label font-weight-bold">Lượt dùng tối đa <span class="text-danger">*</span></label>
+                            <input type="number" id="coupon-max-uses" class="form-control" placeholder="VD: 10 (0 = Không giới hạn)" min="0" value="0">
+                          </div>
+
+                          <div class="form-group mb-3">
+                            <label for="coupon-expires-at" class="form-label font-weight-bold">Ngày hết hạn</label>
+                            <input type="datetime-local" id="coupon-expires-at" class="form-control">
+                          </div>
+
+                          <button type="button" class="btn btn-success btn-block mt-4" id="btn-submit-coupon">
+                            <i class="fas fa-save mr-1"></i> Tạo Mã Coupon
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Column 2: Coupon List -->
+                  <div class="col-md-8">
+                    <div class="card card-secondary card-outline">
+                      <div class="card-header d-flex align-items-center">
+                        <h3 class="card-title"><i class="fas fa-list mr-1"></i> Danh sách Coupon của Khóa học</h3>
+                        <button type="button" class="btn btn-tool ml-auto" id="btn-refresh-coupons">
+                          <i class="fas fa-sync-alt"></i> Làm mới
+                        </button>
+                      </div>
+                      <div class="card-body p-0">
+                        <div class="table-responsive">
+                          <table class="table table-hover table-striped mb-0" id="coupon-list-table">
+                            <thead class="thead-light">
+                              <tr>
+                                <th>Mã</th>
+                                <th>Loại giảm giá</th>
+                                <th>Giá trị giảm</th>
+                                <th>Đã dùng / Tổng</th>
+                                <th>Hết hạn</th>
+                                <th>Trạng thái</th>
+                                <th class="text-right">Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody id="coupon-table-body">
+                              <!-- Will be populated by JS -->
+                            </tbody>
+                          </table>
+                          <div id="empty-coupons-msg" class="text-center py-5 text-muted d-none">
+                            <i class="fas fa-ticket-alt fa-3x mb-3 text-secondary"></i>
+                            <p class="mb-0">Chưa có mã giảm giá nào cho khóa học này.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              @endif
             </div>
 
             <!-- Video Selection Modal -->

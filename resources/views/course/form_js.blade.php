@@ -987,6 +987,216 @@ $(document).ready(function() {
     Swal.fire('Thành công', 'Đã lưu thông tin video!', 'success');
   });
 
+  // --- Coupon Management Ajax Handlers ---
+  if (course) {
+    const courseId = course.id;
+
+    // Load coupons list
+    function loadCoupons() {
+      $.ajax({
+        url: `/courses/${courseId}/coupons`,
+        type: 'GET',
+        success: function(res) {
+          if (res.status) {
+            renderCouponsTable(res.data);
+          }
+        },
+        error: function(err) {
+          console.error('Failed to fetch coupons:', err);
+        }
+      });
+    }
+
+    // Format money helper
+    function formatNumber(num) {
+      return new Intl.NumberFormat('vi-VN').format(num);
+    }
+
+    // Render Coupons list table
+    function renderCouponsTable(coupons) {
+      const $tbody = $('#coupon-table-body');
+      $tbody.empty();
+
+      if (!coupons || coupons.length === 0) {
+        $('#coupon-list-table').hide();
+        $('#empty-coupons-msg').removeClass('d-none');
+        return;
+      }
+
+      $('#coupon-list-table').show();
+      $('#empty-coupons-msg').addClass('d-none');
+
+      coupons.forEach(coupon => {
+        const discountTypeLabel = coupon.discount_type === 'percent' ? 'Phần trăm (%)' : 'Số tiền cố định (đ)';
+        const discountValueLabel = coupon.discount_type === 'percent' ? `${coupon.discount_value}%` : `${formatNumber(coupon.discount_value)}đ`;
+        const totalUsesLabel = coupon.max_uses == 0 ? 'Vô hạn' : coupon.max_uses;
+        const expirationLabel = coupon.expires_at ? new Date(coupon.expires_at).toLocaleString('vi-VN') : 'Không giới hạn';
+        
+        // Active status badge & toggle button
+        const activeBadgeHtml = coupon.is_active 
+          ? `<span class="badge badge-success">Kích hoạt</span>` 
+          : `<span class="badge badge-danger">Tạm khóa</span>`;
+        const toggleBtnHtml = coupon.is_active
+          ? `<button type="button" class="btn btn-outline-warning btn-xs btn-toggle-coupon mr-2" data-id="${coupon.id}" title="Hủy kích hoạt"><i class="fas fa-ban"></i> Tắt</button>`
+          : `<button type="button" class="btn btn-outline-success btn-xs btn-toggle-coupon mr-2" data-id="${coupon.id}" title="Kích hoạt"><i class="fas fa-check"></i> Bật</button>`;
+
+        const rowHtml = `
+          <tr>
+            <td class="font-weight-bold text-primary">${coupon.code}</td>
+            <td>${discountTypeLabel}</td>
+            <td class="font-weight-bold">${discountValueLabel}</td>
+            <td><span class="badge badge-secondary">${coupon.uses}</span> / ${totalUsesLabel}</td>
+            <td class="text-sm">${expirationLabel}</td>
+            <td class="coupon-status-cell-${coupon.id}">${activeBadgeHtml}</td>
+            <td class="text-right">
+              <div class="d-inline-flex">
+                <span class="coupon-toggle-btn-wrapper-${coupon.id}">${toggleBtnHtml}</span>
+                <button type="button" class="btn btn-outline-danger btn-xs btn-delete-coupon" data-id="${coupon.id}" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+        $tbody.append(rowHtml);
+      });
+    }
+
+    // Load coupons list on tab show
+    $('a[id="coupon-tab"]').on('shown.bs.tab', function (e) {
+      loadCoupons();
+    });
+
+    // Refresh button
+    $('#btn-refresh-coupons').on('click', function() {
+      loadCoupons();
+    });
+
+    // Generate random coupon code
+    $('#btn-generate-coupon-code').on('click', function() {
+      const randomCode = 'COUPON-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      $('#coupon-code-input').val(randomCode);
+    });
+
+    // Button click create coupon
+    $('#btn-submit-coupon').on('click', function(e) {
+      e.preventDefault();
+
+      const code = $('#coupon-code-input').val().trim().toUpperCase();
+      const discountType = $('#coupon-discount-type').val();
+      const discountValue = $('#coupon-discount-value').val();
+      const maxUses = $('#coupon-max-uses').val();
+      const expiresAt = $('#coupon-expires-at').val();
+
+      if (!code) {
+        Swal.fire('Lỗi', 'Vui lòng nhập mã coupon!', 'error');
+        return;
+      }
+      if (!discountValue) {
+        Swal.fire('Lỗi', 'Vui lòng nhập giá trị giảm giá!', 'error');
+        return;
+      }
+
+      Swal.fire({
+        title: 'Đang tạo Coupon...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      $.ajax({
+        url: `/courses/${courseId}/coupons`,
+        type: 'POST',
+        data: {
+          code: code,
+          discount_type: discountType,
+          discount_value: discountValue,
+          max_uses: maxUses,
+          expires_at: expiresAt ? expiresAt.replace('T', ' ') : null,
+          _token: '{{ csrf_token() }}'
+        },
+        success: function(res) {
+          Swal.close();
+          if (res.status) {
+            Swal.fire('Thành công', res.message, 'success');
+            // Reset fields
+            $('#coupon-code-input').val('');
+            $('#coupon-discount-value').val('');
+            $('#coupon-max-uses').val('0');
+            $('#coupon-expires-at').val('');
+            // Reload list
+            loadCoupons();
+          } else {
+            Swal.fire('Thất bại', res.message, 'error');
+          }
+        },
+        error: function(err) {
+          Swal.close();
+          const msg = err.responseJSON?.message || 'Có lỗi xảy ra trong quá trình tạo coupon.';
+          Swal.fire('Lỗi', msg, 'error');
+        }
+      });
+    });
+
+    // Delete coupon
+    $(document).on('click', '.btn-delete-coupon', function() {
+      const couponId = $(this).data('id');
+      
+      Swal.fire({
+        title: 'Xác nhận xóa coupon?',
+        text: 'Mã giảm giá này sẽ bị xóa vĩnh viễn khỏi khóa học!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Đồng ý xóa',
+        cancelButtonText: 'Hủy'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url: `/courses/coupons/${couponId}`,
+            type: 'DELETE',
+            data: {
+              _token: '{{ csrf_token() }}'
+            },
+            success: function(res) {
+              if (res.status) {
+                Swal.fire('Đã xóa', res.message, 'success');
+                loadCoupons();
+              } else {
+                Swal.fire('Thất bại', res.message, 'error');
+              }
+            },
+            error: function(err) {
+              Swal.fire('Lỗi', 'Không thể xóa coupon!', 'error');
+            }
+          });
+        }
+      });
+    });
+
+    // Toggle coupon active state
+    $(document).on('click', '.btn-toggle-coupon', function() {
+      const couponId = $(this).data('id');
+
+      $.ajax({
+        url: `/courses/coupons/${couponId}/toggle-active`,
+        type: 'POST',
+        data: {
+          _token: '{{ csrf_token() }}'
+        },
+        success: function(res) {
+          if (res.status) {
+            Swal.fire('Thành công', res.message, 'success');
+            loadCoupons();
+          } else {
+            Swal.fire('Thất bại', res.message, 'error');
+          }
+        },
+        error: function(err) {
+          Swal.fire('Lỗi', 'Không thể thay đổi trạng thái coupon!', 'error');
+        }
+      });
+    });
+  }
+
   // Initial render on page load
   renderAll();
 });

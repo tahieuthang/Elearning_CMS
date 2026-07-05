@@ -17,6 +17,8 @@ class Order extends Model
     'payment_method',
     'payment_time',
     'status',
+    'coupon_code',
+    'discount_amount',
   ];
 
   public $timestamps = true;

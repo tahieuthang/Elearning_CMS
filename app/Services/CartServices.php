@@ -19,23 +19,9 @@ class CartServices
 {
   public function getCartContent()
   {
-    $queries = Cart::with(['course'])
-      ->select(
-        'carts.id as id',
-        'carts.customer_id as customer_id',
-        'carts.course_title as course_title',
-        'carts.quantity as quantity',
-        'carts.price as price',
-        'courses.id as course_id',
-        'courses.description',
-        'courses.thumbnail',
-        'courses.author',
-        DB::raw('(CASE WHEN sale_off_price IS NULL THEN original_price ELSE sale_off_price END) as price')
-      )
-      ->join('courses', 'carts.course_id', '=', 'courses.id')
-      ->where('customer_id', auth('customer')->user()->id)
-      ->get();
-    return $queries;
+     return Cart::with(['course'])
+    ->where('customer_id', auth('customer')->user()->id)
+    ->get();
   }
 
   public function addCartItem($data)

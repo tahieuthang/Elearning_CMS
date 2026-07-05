@@ -170,9 +170,9 @@ class CourseController extends Controller
       'courseDuration' => 'max: 255'
     ]);
     if ($validator->fails()) {
-      return redirect()->route('cour.detail', ['id' => $request->id])
+      return redirect()->route('courses.detail', ['id' => $request->id])
         ->withErrors($validator)
-        ->withInput();;
+        ->withInput();
     }
     $result = $this->courseServices->processUpdateCourse($request->id, $request->all());
     // dd($result);
@@ -210,5 +210,90 @@ class CourseController extends Controller
     }
     $courseId = $request->id;
     return $this->courseServices->processDeleteCourse($courseId);
+  }
+
+  public function getCoupons(Request $request, $courseId)
+  {
+      $coupons = \App\Models\Coupon::where('course_id', $courseId)
+          ->orderBy('created_at', 'desc')
+          ->get();
+      return response()->json([
+          'status' => true,
+          'data' => $coupons
+      ]);
+  }
+
+  public function createCoupon(Request $request, $courseId)
+  {
+      $validator = Validator::make($request->all(), [
+          'code' => 'required|string|max:50|unique:coupons,code',
+          'discount_type' => 'required|in:percent,fixed',
+          'discount_value' => 'required|numeric|min:0',
+          'max_uses' => 'required|integer|min:0',
+          'expires_at' => 'nullable|date',
+      ]);
+
+      if ($validator->fails()) {
+          return response()->json([
+              'status' => false,
+              'message' => $validator->errors()->first()
+          ], 400);
+      }
+
+      $coupon = \App\Models\Coupon::create([
+          'code' => strtoupper($request->code),
+          'type' => 'course',
+          'discount_type' => $request->discount_type,
+          'discount_value' => $request->discount_value,
+          'course_id' => $courseId,
+          'max_uses' => $request->max_uses,
+          'uses' => 0,
+          'is_active' => true,
+          'expires_at' => $request->expires_at,
+      ]);
+
+      return response()->json([
+          'status' => true,
+          'message' => 'Tạo coupon thành công',
+          'data' => $coupon
+      ]);
+  }
+
+  public function deleteCoupon($id)
+  {
+      $coupon = \App\Models\Coupon::find($id);
+      if (!$coupon) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Coupon không tồn tại'
+          ], 404);
+      }
+
+      $coupon->delete();
+
+      return response()->json([
+          'status' => true,
+          'message' => 'Xóa coupon thành công'
+      ]);
+  }
+
+  public function toggleActiveCoupon($id)
+  {
+      $coupon = \App\Models\Coupon::find($id);
+      if (!$coupon) {
+          return response()->json([
+              'status' => false,
+              'message' => 'Coupon không tồn tại'
+          ], 404);
+      }
+
+      $coupon->is_active = !$coupon->is_active;
+      $coupon->save();
+
+      return response()->json([
+          'status' => true,
+          'message' => $coupon->is_active ? 'Kích hoạt coupon thành công' : 'Hủy kích hoạt coupon thành công',
+          'is_active' => $coupon->is_active
+      ]);
   }
 }

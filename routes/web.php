@@ -168,6 +168,12 @@ Route::group(['prefix' => 'courses', 'as' => 'courses', 'middleware' => 'auth'],
   Route::post('/delete-img-banner/{id}', [CourseController::class, 'deleteBanner'])->name('.delete-banner');
   Route::post('/upload-img', [CourseController::class, 'uploadImage'])->name('.uploadImage');
   Route::delete('/delete/{id}', [CourseController::class, 'deleteCourse'])->name('.delete');
+
+  // Coupon routes
+  Route::get('/{courseId}/coupons', [CourseController::class, 'getCoupons'])->name('.coupons.list');
+  Route::post('/{courseId}/coupons', [CourseController::class, 'createCoupon'])->name('.coupons.create');
+  Route::delete('/coupons/{id}', [CourseController::class, 'deleteCoupon'])->name('.coupons.delete');
+  Route::post('/coupons/{id}/toggle-active', [CourseController::class, 'toggleActiveCoupon'])->name('.coupons.toggle');
 });
 
 

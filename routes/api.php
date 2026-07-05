@@ -62,6 +62,7 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
 Route::group(['prefix' => 'course'], function () {
   Route::get('/list', [CourseController::class, 'getCourseList']); //ok
   Route::get('/detail/{id}', [CourseController::class, 'getCourseDetail']); //ok
+  Route::get('/{id}/coupons', [\App\Http\Controllers\API\CouponController::class, 'getCouponsByCourse']);
   Route::get('/top', [CourseController::class, 'getCourseTop']); //ok
   Route::get('/categories', [CourseController::class, 'getCategories']);
   Route::get('/tags', [CourseController::class, 'getTags']);
@@ -82,6 +83,10 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
   Route::group(['prefix' => 'payment'], function () {
     Route::post('/create', [PaymentController::class, 'createPayment']); // đợi sơn
     Route::get('/result', [PaymentController::class, 'resultPayment']);
+  });
+
+  Route::group(['prefix' => 'coupon'], function () {
+    Route::post('/apply', [\App\Http\Controllers\API\CouponController::class, 'apply']);
   });
 });
 

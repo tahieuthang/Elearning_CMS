@@ -40,23 +40,102 @@ class PaymentServices
           },
           0
       );
+
+      // Validate Coupon if supplied
+      $couponDetails = null;
+      $discountAmount = 0;
+      $couponCode = $request->input('coupon_code');
+
+      if (!empty($couponCode)) {
+          $couponServices = resolve(\App\Services\CouponServices::class);
+          // This performs read-only validation
+          $couponDetails = $couponServices->validateCoupon($couponCode, auth('customer')->user()->id);
+          $discountAmount = $couponDetails['discount_amount'];
+      }
+
+      $finalAmount = $amount - $discountAmount;
+      if ($finalAmount < 0) {
+          $finalAmount = 0;
+      }
+
       // CREATE PROCESSING ORDER
       $order = Order::create([
           'code' => Order::generateCode('OD-', null, 'code'),
-          'amount' => (int)$amount,
+          'amount' => (int)$finalAmount,
           'customer_id' => auth('customer')->user()->id,
           'payment_method' => Config::get('constants.payment_method.vnpay'),
           'payment_time' => null,
           'status' => Config::get('constants.order_status.processing'),
+          'coupon_code' => $couponDetails ? $couponDetails['coupon_code'] : null,
+          'discount_amount' => (int)$discountAmount,
       ]);
+
+      // Consume coupon (This is where race conditions occur)
+      if ($couponDetails) {
+          $couponServices = resolve(\App\Services\CouponServices::class);
+          $mode = $request->input('concurrency_mode', 'pessimistic');
+          $couponCodes = array_filter(array_map('trim', explode(',', $couponDetails['coupon_code'])));
+
+          foreach ($couponCodes as $code) {
+              $specificDiscount = 0;
+              if (!empty($couponDetails['coupons_info'])) {
+                  foreach ($couponDetails['coupons_info'] as $info) {
+                      if ($info['code'] === $code) {
+                          $specificDiscount = $info['discount_amount'];
+                          break;
+                      }
+                  }
+              }
+
+              if ($mode === 'pessimistic') {
+                  $couponServices->consumeCouponWithPessimisticLock(
+                      $code,
+                      auth('customer')->user()->id,
+                      $order->id,
+                      $specificDiscount
+                  );
+              } elseif ($mode === 'atomic') {
+                  $couponServices->consumeCouponWithAtomicUpdate(
+                      $code,
+                      auth('customer')->user()->id,
+                      $order->id,
+                      $specificDiscount
+                  );
+              } else {
+                  // Default to check-then-act bug mode
+                  $couponServices->consumeCouponWithBug(
+                      $code,
+                      auth('customer')->user()->id,
+                      $order->id,
+                      $specificDiscount
+                  );
+              }
+          }
+      }
+
       $orderItems = [];
       foreach ($cartContent as $item) {
+          $itemCouponCode = null;
+          $itemDiscountAmount = 0;
+
+          if (!empty($couponDetails['coupons_info'])) {
+              foreach ($couponDetails['coupons_info'] as $info) {
+                  if ($info['type'] === 'course' && (int)$info['course_id'] === (int)$item['course_id']) {
+                      $itemCouponCode = $info['code'];
+                      $itemDiscountAmount = $info['discount_amount'];
+                      break;
+                  }
+              }
+          }
+
           $orderItems[] = [
               'order_id' => $order->id,
               'course_id' => $item['course_id'],
               'course_title' => $item['course_title'],
               'quantity' => $item['quantity'],
               'price' => $item['price'],
+              'coupon_code' => $itemCouponCode,
+              'discount_amount' => $itemDiscountAmount,
               'created_at' => Carbon::now(),
               'updated_at' => Carbon::now(),
           ];
