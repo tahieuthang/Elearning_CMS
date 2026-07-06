@@ -16,6 +16,7 @@ services:
       - "8000:8000"
     depends_on:
       - mysql
+      - redis
     command: php-fpm -y /usr/local/etc/php-fpm.conf -R
 
   nginx:
@@ -48,6 +49,13 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  redis:
+    image: redis:alpine
+    container_name: elearning_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+
   queue:
     image: elearning
     container_name: elearning-queue
@@ -60,6 +68,7 @@ services:
     depends_on:
       - app
       - mysql
+      - redis
 volumes:
   mysql_data:
   app_code:
