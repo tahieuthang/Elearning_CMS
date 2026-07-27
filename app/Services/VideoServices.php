@@ -216,15 +216,11 @@ class VideoServices
   {
     try {
       $video = VideoUploading::where('id', $id)->first();
-      dd($video);
       if ($video) {
-        $clientId = env('VIMEO_CLIENT');
-        $clientSecret = env('VIMEO_SECRET');
-        $vimeoClient = new \Vimeo\Vimeo($clientId, $clientSecret);
-        $vimeoClient->request("/videos/{$video->vimeo_id}", [], 'DELETE');
-        DB::transaction();
+        if (!empty($video->vimeo_id)) {
+          Vimeo::request("/videos/{$video->vimeo_id}", [], 'DELETE');
+        }
         $video->delete();
-        DB::commit();
       }
       return [
         'status' => true

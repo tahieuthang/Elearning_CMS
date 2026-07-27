@@ -19,5 +19,5 @@ if [ $counter -ge $max_attempts ]; then
   exit 1
 fi
 
-echo "✅ Database đã sẵn sàng, chạy queue worker..."
-php -d memory_limit=1G artisan queue:work --tries=3 --timeout=90
+echo "✅ Database đã sẵn sàng, chạy queue worker với Redis..."
+php -d memory_limit=1G artisan queue:work redis --tries=3 --timeout=300

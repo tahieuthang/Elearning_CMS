@@ -15,10 +15,10 @@ return new class extends Migration
             $table->charset = 'utf8mb4';
             $table->collation = 'utf8mb4_unicode_ci';
             $table->increments('id');
-            $table->integer('video_id')->nullable();
-            $table->integer('vimeo_id')->nullable();
+            $table->string('video_id')->nullable();
+            $table->string('vimeo_id')->nullable();
             $table->text('file_path')->nullable();
-            $table->integer('job_id')->nullable(true);
+            $table->string('job_id')->nullable(true);
             $table->integer('job_status')->default(1);
             $table->text('thumbnail_id')->nullable(true);
             $table->text('error_log')->nullable(true);
