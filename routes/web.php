@@ -146,7 +146,9 @@ Route::group(['prefix' => 'video', 'as' => 'video', 'middleware' => 'auth'], fun
   Route::get('/anyData', [VideoController::class, 'anyData'])->name('.anyData');
   Route::get('/anyDataForCreate', [VideoController::class, 'anyDataForCreate'])->name('.anyDataForCreate');
   Route::delete('/delete/{id}', [VideoController::class, 'deleteVideo'])->middleware(PermissionMiddleware::class . ':video.delete')->name('.delete');
-  Route::get('/vimeo/detail/{id}', [VideoController::class, 'vimeoDetail'])->name('.vimeoDetail');
+  Route::get('/vimeo/detail/{id}', [VideoController::class, 'vimeoDetail'])
+    ->where('id', '.*')
+    ->name('.vimeoDetail');
   Route::get('/process', [VideoController::class, 'processUpload'])->name('.process');
   Route::get('/process/data', [VideoController::class, 'processData'])->name('.processData');
   Route::get('/vimeo/thumbnail', [VideoController::class, 'fetchVimeoThumbnail'])->name('.vimeoThumbnail');

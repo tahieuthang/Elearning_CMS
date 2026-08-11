@@ -14,6 +14,8 @@ use Yajra\Datatables\Datatables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\UploadToVimeo;
+use App\Jobs\UploadToR2;
+use Illuminate\Support\Facades\Storage;
 use Vimeo\Laravel\Facades\Vimeo;
 use Illuminate\Http\Request;
 use Laravel\Ui\Presets\React;
@@ -36,15 +38,76 @@ class VideoServices
 
   public function getVimeo($id)
   {
-    $vimeoId = CourseVideo::find($id)->vimeo_id;
-    $vimeoApi = '/videos/' . $vimeoId;
-    $vimeoUrl = Vimeo::request($vimeoApi, [], 'GET');
-
-    if (!empty($vimeoUrl['body']['error'])) {
-        throw new NotFoundHttpException(__('Not found Vimeo!'));
+    $courseVideo = CourseVideo::find($id);
+    if (!$courseVideo) {
+      throw new NotFoundHttpException(__('Not found Video!'));
     }
 
-    return $vimeoUrl['body']['embed']['html'] ?? '';
+    $vimeoId = (string) $courseVideo->vimeo_id;
+
+    // 1. Check if vimeo_id itself is a direct R2 Public URL
+    if ($this->isHttpUrl($vimeoId)) {
+      return $this->renderDirectVideo($vimeoId);
+    }
+
+    if ($this->isR2ObjectKey($vimeoId)) {
+      return $this->renderDirectVideo($this->r2PublicUrl($vimeoId));
+    }
+
+    // 2. Check in video_uploadings table by vimeo_id or video_id or id
+    $uploading = VideoUploading::where('vimeo_id', $vimeoId)
+      ->orWhere('file_path', $vimeoId)
+      ->orWhere('video_id', $vimeoId)
+      ->orWhere('id', $vimeoId)
+      ->first();
+
+    if ($uploading && !empty($uploading->file_path)) {
+      if ($this->isHttpUrl($uploading->file_path)) {
+        return $this->renderDirectVideo($uploading->file_path);
+      }
+    }
+
+    if ($uploading && !empty($uploading->vimeo_id) && $this->isR2ObjectKey($uploading->vimeo_id)) {
+      return $this->renderDirectVideo($this->r2PublicUrl($uploading->vimeo_id));
+    }
+
+    // 3. Fallback: Vimeo embed iframe
+    try {
+      $vimeoApi = '/videos/' . $vimeoId;
+      $vimeoUrl = Vimeo::request($vimeoApi, [], 'GET');
+
+      if (!empty($vimeoUrl['body']['embed']['html'])) {
+        return $vimeoUrl['body']['embed']['html'];
+      }
+    } catch (\Throwable $e) {
+      Log::warning("Vimeo fetch failed for ID {$vimeoId}: " . $e->getMessage());
+    }
+
+    return '';
+  }
+
+  public function renderDirectVideo(string $url): string
+  {
+    return '<video controls autoplay controlsList="nodownload" style="width:100%;height:100%;object-fit:contain;" src="' . e($url) . '"></video>';
+  }
+
+  public function r2PublicUrl(string $path): string
+  {
+    if ($this->isHttpUrl($path)) {
+      return $path;
+    }
+
+    return rtrim((string) config('filesystems.disks.r2.url'), '/') . '/' . ltrim($path, '/');
+  }
+
+  private function isHttpUrl(?string $value): bool
+  {
+    return is_string($value) && (str_starts_with($value, 'http://') || str_starts_with($value, 'https://'));
+  }
+
+  private function isR2ObjectKey(?string $value): bool
+  {
+    return is_string($value) && str_starts_with(ltrim($value, '/'), 'videos/');
   }
 
   public function formatVideoData($data)
@@ -96,7 +159,7 @@ class VideoServices
         return '<img style="width: 120px;height: 120px;" src="' . url('/images/default_image.jpg') . '" />';
       })
       ->addColumn('action', function ($row) {
-        return '<button type="button" class="btn btn-block btn-info btn-info-video" style="width: 130px;" video-id="' . $row->vimeo_id . '">Xem video</button>';
+        return '<button type="button" class="btn btn-block btn-info btn-info-video" style="width: 130px;" video-id="' . e($row->id) . '">Xem video</button>';
       })
       ->rawColumns(['action', 'videoThumbnail'])
       ->make(true);
@@ -131,17 +194,23 @@ class VideoServices
 
       $uploadResult = move_uploaded_file($file, $targetFile);
       if ($uploadResult) {
-        $chunks = glob("{$targetDir}/{$fileName}_*");
-        // check uploaded chunks so far (do not combine files if only one chunk received)
-        $allChunksUploaded = $totalChunks > 1 && count($chunks) == $totalChunks;
-        if ($allChunksUploaded) {           // all chunks were uploaded
-          $outFile = $targetDir . '/' . $fileName;
-          // combines all file chunks to one file
-          $this->combineChunks($chunks, $outFile);
+        $isCompleted = false;
+        if ($totalChunks > 1) {
+          $chunks = glob("{$targetDir}/{$fileName}_*");
+          if (count($chunks) == $totalChunks) {
+            $outFile = $targetDir . '/' . $fileName;
+            $this->combineChunks($chunks, $outFile);
+            $isCompleted = true;
+          }
+        } else {
+          $isCompleted = true;
         }
-        // if you wish to generate a thumbnail image for the file
-        // $targetUrl = getThumbnailUrl($path, $fileName);
-        // separate link for the full blown image file
+
+        // Trigger saveVideoId and dispatch Job when file is completely assembled on server
+        if ($isCompleted) {
+          $this->saveVideoId($fileId, 'uploads/' . $fileName);
+        }
+
         $zoomUrl = '/uploads/' . $fileName;
 
         return [
@@ -189,18 +258,38 @@ class VideoServices
   public function saveVideoId($videoId, $filePath)
   {
     try {
+      $cleanPath = ltrim($filePath, '/');
+      $fullPath = public_path($cleanPath);
+
+      // Fallback check: If target file does not exist at fullPath, check if it exists under public/uploads/
+      if (!file_exists($fullPath)) {
+        $baseName = basename($filePath);
+        $fallbackPath = public_path('uploads/' . $baseName);
+        if (file_exists($fallbackPath)) {
+          $filePath = 'uploads/' . $baseName;
+          $fullPath = $fallbackPath;
+        }
+      }
+
       $data = [
         'video_id' => $videoId,
         'file_path' => $filePath,
         'created_at' => Carbon::now()->toDateTimeString()
       ];
       $videoUploadingRecordId = VideoUploading::insertGetId($data);
-      $video_name = \explode('/', $filePath)[2] ?? 'default_video_name';
-      $options = [
-        'name' => $video_name,
-        'description' => 'test video'
-      ];
-      UploadToVimeo::dispatch(public_path($filePath), $videoId, $videoUploadingRecordId, $options);
+      $driver = env('VIDEO_STORAGE_DRIVER', 'r2');
+
+      if ($driver === 'vimeo') {
+        $video_name = \explode('/', $filePath)[2] ?? 'default_video_name';
+        $options = [
+          'name' => $video_name,
+          'description' => 'test video'
+        ];
+        UploadToVimeo::dispatch($fullPath, $videoId, $videoUploadingRecordId, $options);
+      } else {
+        UploadToR2::dispatch($fullPath, $videoId, $videoUploadingRecordId);
+      }
+
       return [
         'status' => true,
       ];
@@ -218,7 +307,12 @@ class VideoServices
       $video = VideoUploading::where('id', $id)->first();
       if ($video) {
         if (!empty($video->vimeo_id)) {
-          Vimeo::request("/videos/{$video->vimeo_id}", [], 'DELETE');
+          // If vimeo_id starts with 'videos/' it is stored on Cloudflare R2
+          if (str_starts_with($video->vimeo_id, 'videos/')) {
+            Storage::disk('r2')->delete($video->vimeo_id);
+          } else {
+            Vimeo::request("/videos/{$video->vimeo_id}", [], 'DELETE');
+          }
         }
         $video->delete();
       }
@@ -235,31 +329,65 @@ class VideoServices
 
   public function updateThumbnail()
   {
-    $videoNullThumbnailData = VideoUploading::whereNotNull('vimeo_id')
-      ->whereNull('thumbnail_id')
-      ->orWhere('thumbnail_id', '')
-      ->get()
-      ->toArray();
+    $result = [
+      'updated' => 0,
+      'fallback' => 0,
+      'skipped' => 0,
+      'errors' => [],
+    ];
 
-    if (!empty($videoNullThumbnailData)) {
-      foreach ($videoNullThumbnailData as $videoNullThumbnail) {
-        $thumbnailApiLink = "/videos/" . $videoNullThumbnail['vimeo_id'] . "/pictures";
-        $vimeoThumbnail = Vimeo::request($thumbnailApiLink, ['per_page' => 1], 'GET');
+    $videoNullThumbnailData = VideoUploading::where(function ($query) {
+      $query->whereNull('thumbnail_id')
+        ->orWhere('thumbnail_id', '');
+    })->get();
 
-        // Kiểm tra xem có dữ liệu thumbnail không
-        if (!empty($vimeoThumbnail['body']['data']) && count($vimeoThumbnail['body']['data']) > 0) {
-          // Lấy URL thumbnail
-          $thumbnailUrl = empty($vimeoThumbnail['body']['data'][0]['base_link'])
-            ? $vimeoThumbnail['body']['data'][0]['link']
-            : $vimeoThumbnail['body']['data'][0]['base_link'];
+    foreach ($videoNullThumbnailData as $videoNullThumbnail) {
+      $vimeoId = $videoNullThumbnail->vimeo_id ?? '';
+      $filePath = $videoNullThumbnail->file_path ?? '';
 
-          // Cập nhật thumbnail cho video tương ứng
-          VideoUploading::where('id', $videoNullThumbnail['id'])->update([
-            'thumbnail_id' => $thumbnailUrl
-          ]);
+      // Check if video is stored on R2
+      if (
+        str_starts_with($vimeoId, 'http://') ||
+        str_starts_with($vimeoId, 'https://') ||
+        str_starts_with($vimeoId, 'videos/') ||
+        str_starts_with($filePath, 'http://') ||
+        str_starts_with($filePath, 'https://')
+      ) {
+        $videoNullThumbnail->update(['thumbnail_id' => url('/images/default_image.jpg')]);
+        $result['updated']++;
+        $result['fallback']++;
+        continue;
+      }
+
+      // For Vimeo videos
+      try {
+        if (!empty($vimeoId)) {
+          $thumbnailApiLink = "/videos/" . $vimeoId . "/pictures";
+          $vimeoThumbnail = Vimeo::request($thumbnailApiLink, ['per_page' => 1], 'GET');
+
+          if (!empty($vimeoThumbnail['body']['data']) && count($vimeoThumbnail['body']['data']) > 0) {
+            $thumbnailUrl = empty($vimeoThumbnail['body']['data'][0]['base_link'])
+              ? $vimeoThumbnail['body']['data'][0]['link']
+              : $vimeoThumbnail['body']['data'][0]['base_link'];
+
+            $videoNullThumbnail->update([
+              'thumbnail_id' => $thumbnailUrl
+            ]);
+            $result['updated']++;
+          } else {
+            $result['skipped']++;
+          }
         }
+      } catch (\Throwable $e) {
+        Log::warning("Vimeo thumbnail update failed for {$vimeoId}: " . $e->getMessage());
+        $result['errors'][] = [
+          'id' => $videoNullThumbnail->id,
+          'message' => $e->getMessage(),
+        ];
       }
     }
+
+    return $result;
   }
 
   public function formatVideoListDataTableForCreateCource($data)
@@ -282,7 +410,7 @@ class VideoServices
         return $row->created_at;
       })
       ->addColumn('action', function ($row) {
-        return '<button type="button" class="btn btn-block btn-info btn-info-video" style=" width: 130px; " video-id="' . $row->vimeo_id . '">Xem video</button>';
+        return '<button type="button" class="btn btn-block btn-info btn-info-video" style=" width: 130px; " video-id="' . e($row->id) . '">Xem video</button>';
       })
       ->rawColumns(['videoThumbnail', 'check', 'action'])
       ->make(true);

@@ -7,37 +7,34 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Redis;
-use Vimeo\Laravel\Facades\Vimeo;
+use Illuminate\Support\Facades\Storage;
 use App\Models\VideoUploading;
 use Carbon\Carbon;
-use Helper;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class UploadToVimeo implements ShouldQueue
+class UploadToR2 implements ShouldQueue
 {
   use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
   public $tries = 3;
-  public $timeout = 300;
+  public $timeout = 600;
 
   protected $file;
-  protected $options;
-  protected $localfileId;
+  protected $videoId;
   protected $videoUploadingRecordId;
 
   /**
    * Create a new job instance.
    *
-   * @return void
+   * @param string $file Local absolute file path
+   * @param string|int $videoId
+   * @param int $videoUploadingRecordId
    */
-  public function __construct($file, $localfileId, $videoUploadingRecordId, array $options = [])
+  public function __construct(string $file, $videoId, int $videoUploadingRecordId)
   {
     $this->file = $file;
-    $this->localfileId = $localfileId;
+    $this->videoId = $videoId;
     $this->videoUploadingRecordId = $videoUploadingRecordId;
-    $this->options = $options;
   }
 
   /**
@@ -48,7 +45,7 @@ class UploadToVimeo implements ShouldQueue
   public function handle()
   {
     try {
-      // 1. Update job_id and status to in-progress
+      // 1. Update job_id and status to inProgress
       if ($this->job) {
         VideoUploading::where('id', $this->videoUploadingRecordId)->update([
           'job_id' => (string)$this->job->getJobId(),
@@ -56,15 +53,31 @@ class UploadToVimeo implements ShouldQueue
         ]);
       }
 
-      // 2. Perform Vimeo API upload OUTSIDE DB transaction to avoid locking DB connections
-      $vimeoVideoId = Vimeo::upload($this->file, $this->options);
-      $vimeoCode = basename($vimeoVideoId);
+      if (!file_exists($this->file)) {
+        throw new \Exception("Source file not found at path: {$this->file}");
+      }
 
-      // 3. Update DB record with success status
+      $fileName = basename($this->file);
+      $r2Path = 'videos/' . date('Y/m') . '/' . time() . '_' . $fileName;
+
+      // 2. Stream upload to Cloudflare R2 disk
+      $stream = fopen($this->file, 'r+');
+      $uploaded = Storage::disk('r2')->put($r2Path, $stream);
+      if (is_resource($stream)) {
+        fclose($stream);
+      }
+
+      if (!$uploaded) {
+        throw new \Exception("Failed to upload file to Cloudflare R2 disk.");
+      }
+
+      $r2PublicUrl = rtrim(config('filesystems.disks.r2.url', ''), '/') . '/' . ltrim($r2Path, '/');
+
+      // 3. Update DB record with R2 public URL and success status
       VideoUploading::where('id', $this->videoUploadingRecordId)
         ->update([
-          'vimeo_id' => $vimeoCode,
-          'file_path' => null,
+          'vimeo_id' => $r2Path,
+          'file_path' => $r2PublicUrl,
           'updated_at' => Carbon::now()->toDateTimeString(),
           'job_status' => config('constants.job_status.success', 'success'),
           'error_log' => null,
@@ -74,14 +87,13 @@ class UploadToVimeo implements ShouldQueue
       $this->cleanUpFile();
 
     } catch (\Throwable $e) {
-      Log::error("UploadToVimeo Job failed for record ID {$this->videoUploadingRecordId}: " . $e->getMessage(), [
+      Log::error("UploadToR2 Job failed for record ID {$this->videoUploadingRecordId}: " . $e->getMessage(), [
         'file' => $this->file,
         'exception' => $e
       ]);
 
       VideoUploading::where('id', $this->videoUploadingRecordId)
         ->update([
-          'vimeo_id' => null,
           'job_status' => config('constants.job_status.fail', 'fail'),
           'error_log' => $e->getMessage()
         ]);
@@ -98,7 +110,7 @@ class UploadToVimeo implements ShouldQueue
    */
   public function failed(\Throwable $exception)
   {
-    Log::error("UploadToVimeo Job permanently failed for record ID {$this->videoUploadingRecordId}: " . $exception->getMessage());
+    Log::error("UploadToR2 Job permanently failed for record ID {$this->videoUploadingRecordId}: " . $exception->getMessage());
 
     VideoUploading::where('id', $this->videoUploadingRecordId)
       ->update([

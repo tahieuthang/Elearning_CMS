@@ -121,9 +121,7 @@
             initialPreviewAsData: true, // identify if you are sending preview data only and not the raw markup,
             initialPreviewFileType: 'video', // image is the default and can be overridden in config below
         }).on('fileuploaded', function(event, previewId, index, fileId, fileName) {
-            let filename = fileId.split('_').slice(1).join('_');
-            filename = '/uploads/' + filename;
-            saveVideoIdAfterUpload(fileId, filename)
+            // Server automatically handles saveVideoId and dispatches R2 queue job upon complete chunk assembly
         }).on('fileuploaderror', function(event, data, msg) {
             Swal.fire('fail!', msg, '')
         })

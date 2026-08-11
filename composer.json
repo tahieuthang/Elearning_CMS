@@ -15,6 +15,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "laravel/ui": "^4.6",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "predis/predis": "*",
         "ramsey/uuid": "^4.8",
         "select2/select2": "^4.0",

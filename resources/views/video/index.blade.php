@@ -169,7 +169,7 @@
             // Xóa nội dung cũ trước khi thêm nội dung mới
             $('.custom-body-content').empty().append(response.data);
             // Sử dụng CSS để đảm bảo video chiếm toàn bộ không gian
-            $('.custom-body-content iframe').css({
+            $('.custom-body-content iframe, .custom-body-content video').css({
               'position': 'absolute',
               'top': '0',
               'left': '0',

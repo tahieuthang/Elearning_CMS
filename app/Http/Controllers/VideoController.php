@@ -76,7 +76,36 @@ class VideoController extends Controller
   public function vimeoDetail($id)
   {
     try {
-      $videoRequestUrl = '/videos/' . $id;
+      // 1. Look up in VideoUploading table by id, vimeo_id, or video_id
+      $uploading = VideoUploading::where('id', $id)
+        ->orWhere('vimeo_id', $id)
+        ->orWhere('video_id', $id)
+        ->first();
+
+      if ($uploading && !empty($uploading->file_path)) {
+        if (str_starts_with($uploading->file_path, 'http://') || str_starts_with($uploading->file_path, 'https://')) {
+          $videoHtml = '<video controls autoplay style="width:100%;height:100%;object-fit:contain;" src="' . e($uploading->file_path) . '"></video>';
+          return [
+            'status' => true,
+            'data' => $videoHtml,
+            'message' => 'success'
+          ];
+        }
+      }
+
+      // 2. Check if $id itself is a direct HTTP/HTTPS R2 URL
+      if (str_starts_with($id, 'http://') || str_starts_with($id, 'https://')) {
+        $videoHtml = '<video controls autoplay style="width:100%;height:100%;object-fit:contain;" src="' . e($id) . '"></video>';
+        return [
+          'status' => true,
+          'data' => $videoHtml,
+          'message' => 'success'
+        ];
+      }
+
+      // 3. Fallback: Vimeo video detail
+      $vimeoId = $uploading ? $uploading->vimeo_id : $id;
+      $videoRequestUrl = '/videos/' . $vimeoId;
       $video = Vimeo::request($videoRequestUrl, [], 'GET');
 
       if (empty($video['body']['error'])) {
@@ -107,11 +136,11 @@ class VideoController extends Controller
   {
     DB::beginTransaction();
     try {
-      $this->videoServices->updateThumbnail();
+      $result = $this->videoServices->updateThumbnail();
       DB::commit();
       return ([
         'status' => true,
-        'data' => [],
+        'data' => $result,
         'message' => 'success'
       ]);
     } catch (\Exception $e) {
