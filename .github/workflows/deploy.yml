@@ -3,117 +3,158 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy-dev
+  cancel-in-progress: false
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, pdo, pdo_mysql, bcmath, gd
-      
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
-      
+
       - name: Run tests
         run: php artisan test
-        continue-on-error: true
 
   deploy:
     name: Deploy to Server
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
-      - name: Add server to known hosts
+
+      - name: Configure verified server host key
+        env:
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      
+          if [ -z "$SSH_KNOWN_HOSTS" ]; then
+            echo "::error::Missing SSH_KNOWN_HOSTS repository secret."
+            exit 1
+          fi
+
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
       - name: Deploy to production server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/var/www/elearning' }}  # Có thể hardcode trực tiếp nếu cố định
-          
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
+          BACKUP_DIR: ${{ secrets.BACKUP_DIR }}
+          DEPLOY_REF: dev
         run: |
-          ssh -o StrictHostKeyChecking=no ${SSH_USER}@${SSH_HOST} bash << EOF
-            set -e
-            echo "🚀 Starting deployment..."
-            cd ${PROJECT_PATH}
+          ssh "${SSH_USER}@${SSH_HOST}" \
+            "PROJECT_PATH='${PROJECT_PATH}' BACKUP_DIR='${BACKUP_DIR}' DEPLOY_REF='${DEPLOY_REF}' bash -s" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
 
-            echo "📥 Pulling latest code..."
-            git fetch origin
-            git reset --hard origin/dev
+          : "${PROJECT_PATH:=/var/www/elearning}"
+          : "${BACKUP_DIR:=$HOME/elearning-backups}"
+          : "${DEPLOY_REF:=dev}"
 
-            echo "💾 Creating database backup..."
-            docker compose -f docker-compose.yml exec -T mysql \
-            sh -c 'mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" vfl-academy' \
-            > backup_$(date +%Y%m%d_%H%M%S).sql || true
+          compose() {
+            docker compose -f docker-compose.yml "$@"
+          }
 
-            echo "🛑 Stopping containers..."
-            docker compose -f docker-compose.yml down
+          echo "Starting deployment of ${DEPLOY_REF}..."
+          cd "$PROJECT_PATH"
 
-            echo "🔨 Building Docker images..."
-            docker compose -f docker-compose.yml build --no-cache
+          echo "Pulling latest code..."
+          git fetch --prune origin "$DEPLOY_REF"
+          git reset --hard "origin/$DEPLOY_REF"
 
-            echo "▶️ Starting containers..."
-            docker compose -f docker-compose.yml up -d
+          if compose ps -q mysql | grep -q .; then
+            echo "Creating database backup..."
+            mkdir -p "$BACKUP_DIR"
+            backup_file="$BACKUP_DIR/vfl-academy_$(date +%Y%m%d_%H%M%S).sql"
+            compose exec -T mysql sh -ceu 'exec mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' > "$backup_file"
+          else
+            echo "MySQL container is not running; skipping database backup."
+          fi
 
-            echo "📦 Installing composer dependencies..."
-            docker compose -f docker-compose.yml exec -T app composer install \
-            --no-dev --optimize-autoloader --no-interaction
+          echo "Building Docker images..."
+          compose build
 
-            echo "⏳ Waiting for services to be ready..."
-            sleep 10
+          echo "Starting containers..."
+          compose up -d --remove-orphans
 
-            echo "📊 Running migrations..."
-            docker compose -f docker-compose.yml exec -T app php artisan migrate --force
+          echo "Installing application dependencies and assets..."
+          compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
+          compose exec -T app npm install --no-audit --no-fund
+          compose exec -T app npm run build
 
-            echo "🧹 Clearing caches..."
-            docker compose -f docker-compose.yml exec -T app php artisan config:clear
-            docker compose -f docker-compose.yml exec -T app php artisan cache:clear
-            docker compose -f docker-compose.yml exec -T app php artisan route:clear
-            docker compose -f docker-compose.yml exec -T app php artisan view:clear
+          echo "Waiting for Laravel to become ready..."
+          ready=false
+          for attempt in $(seq 1 30); do
+            if compose exec -T app php artisan about > /dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then
+            echo "Laravel did not become ready within 60 seconds."
+            compose logs --tail=200 app nginx queue
+            exit 1
+          fi
 
-            echo "⚡ Optimizing application..."
-            docker compose -f docker-compose.yml exec -T app php artisan config:cache
-            docker compose -f docker-compose.yml exec -T app php artisan route:cache
-            docker compose -f docker-compose.yml exec -T app php artisan view:cache
+          echo "Running migrations..."
+          compose exec -T app php artisan migrate --force
 
-            echo "🏥 Running health check..."
-            sleep 5
-            curl -f http://localhost/api/ho || exit 1
+          echo "Optimizing Laravel caches..."
+          compose exec -T app php artisan optimize:clear
+          compose exec -T app php artisan config:cache
+          compose exec -T app php artisan route:cache
+          compose exec -T app php artisan view:cache
 
-            echo "✅ Deployment completed successfully!"
-          EOF
-      
+          echo "Running HTTP health check..."
+          healthy=false
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent --show-error http://localhost/health-check > /dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$healthy" != true ]; then
+            echo "Health check failed."
+            compose logs --tail=200 app nginx queue
+            exit 1
+          fi
+
+          echo "Deployment completed successfully."
+          REMOTE_SCRIPT
+
       - name: Notify deployment success
         if: success()
-        run: |
-          echo "✅ Deployment to production completed successfully!"
-          # Có thể thêm webhook notification ở đây (Slack, Discord, etc.)
-      
+        run: echo "Deployment to production completed successfully."
+
       - name: Notify deployment failure
         if: failure()
-        run: |
-          echo "❌ Deployment failed!"
-          # Có thể thêm webhook notification ở đây
-
+        run: echo "Deployment failed."
