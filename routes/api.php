@@ -17,6 +17,8 @@ Route::get('/ho', function () {
 });
 
 Route::post('/customer/login', [CustomerController::class, 'postLogin']); //ok
+Route::post('/customer/refresh', [CustomerController::class, 'refresh']);
+Route::post('/customer/logout', [CustomerController::class, 'logout']);
 Route::post('/customer/register', [CustomerController::class, 'postRegister']); //ok
 Route::post('/customer/verify', [CustomerController::class, 'verifyEmail']); //ok
 Route::post('/customer/forgot-password', [CustomerController::class, 'sendResetLinkEmail']);
@@ -29,7 +31,6 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
     Route::patch('/update-profile', [CustomerController::class, 'updateProfile']); //ok
     Route::get('/profile', [CustomerController::class, 'profile']); //ok
     Route::patch('/change-password', [CustomerController::class, 'changePassword']); //ok
-    Route::post('/logout', [AuthController::class, 'logout']); //ok
   });
 });
 

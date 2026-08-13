@@ -36,6 +36,36 @@ class CustomerController extends Controller
     $this->customerServices = $customerServices;
   }
 
+  private function issueRefreshToken(Customer $customer): string
+  {
+    JWTAuth::claims(['token_type' => 'refresh'])
+      ->factory()
+      ->setTTL((int) config('jwt.refresh_ttl'));
+
+    $token = JWTAuth::fromUser($customer);
+
+    JWTAuth::claims([])
+      ->factory()
+      ->setTTL((int) config('jwt.ttl'));
+
+    return $token;
+  }
+
+  private function refreshCookie(string $token)
+  {
+    return cookie(
+      config('jwt.refresh_cookie'),
+      $token,
+      (int) config('jwt.refresh_cookie_minutes'),
+      '/api/customer',
+      null,
+      (bool) config('jwt.refresh_cookie_secure'),
+      true,
+      false,
+      config('jwt.refresh_cookie_same_site')
+    );
+  }
+
   public function postRegister(Request $request)
   {
     try {
@@ -133,7 +163,9 @@ class CustomerController extends Controller
         ], 404);
       }
 
-      $token = Auth::guard('customer')->attempt([
+      $token = Auth::guard('customer')
+        ->setTTL((int) config('jwt.ttl'))
+        ->attempt([
         'email' => $request->email,
         'password' => $request->password,
         'status' => Config::get('constants.customer_status_enable'),
@@ -141,12 +173,13 @@ class CustomerController extends Controller
 
       if ($token) {
         $customer = Auth::guard('customer')->user();
+        $refreshToken = $this->issueRefreshToken($customer);
         return response()->json([
           'status' => 200,
           'access_token' => $token,
           'user' => $customer,
           'token_type' => 'Bearer',
-        ]);
+        ])->withCookie($this->refreshCookie($refreshToken));
       } else {
         return response()->json([
           'status' => 401,
@@ -167,13 +200,51 @@ class CustomerController extends Controller
     }
   }
 
+  public function refresh(Request $request)
+  {
+    try {
+      $refreshToken = $request->cookie(config('jwt.refresh_cookie'));
+      if (!$refreshToken) {
+        return response()->json(['status' => 401, 'error' => 'Refresh token is missing.'], 401);
+      }
+
+      $payload = JWTAuth::setToken($refreshToken)->getPayload();
+      if ($payload->get('token_type') !== 'refresh') {
+        return response()->json(['status' => 401, 'error' => 'Invalid refresh token.'], 401);
+      }
+
+      $customer = Customer::find($payload->get('sub'));
+      if (!$customer || $customer->status !== Config::get('constants.customer_status_enable')) {
+        return response()->json(['status' => 401, 'error' => 'Invalid refresh token.'], 401);
+      }
+
+      $accessToken = Auth::guard('customer')
+        ->setTTL((int) config('jwt.ttl'))
+        ->login($customer);
+      $newRefreshToken = $this->issueRefreshToken($customer);
+
+      return response()->json([
+        'status' => 200,
+        'access_token' => $accessToken,
+        'token_type' => 'Bearer',
+        'user' => $customer,
+      ])->withCookie($this->refreshCookie($newRefreshToken));
+    } catch (\Throwable $e) {
+      return response()->json(['status' => 401, 'error' => 'Invalid or expired refresh token.'], 401);
+    }
+  }
+
   public function logout(Request $request)
   {
-    JWTAuth::invalidate(JWTAuth::getToken()); // Hủy token hiện tại
+    try {
+      JWTAuth::invalidate(JWTAuth::getToken()); // Hủy access token hiện tại
+    } catch (\Throwable $e) {
+      // The client must still be able to clear the refresh cookie.
+    }
 
     return response()->json([
       'message' => 'Logged out successfully'
-    ], 200);
+    ], 200)->withoutCookie(config('jwt.refresh_cookie'));
   }
 
   public function profile(Request $request)

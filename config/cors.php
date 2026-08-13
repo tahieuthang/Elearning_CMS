@@ -19,7 +19,7 @@ return [
 
   'allowed_methods' => ['*'], // Các HTTP method được phép (GET, POST, PUT,...)
 
-  'allowed_origins' => ['*'], // Domain được phép truy cập
+  'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')], // Domain được phép truy cập
 
   // Pattern cho ngrok URLs (vì ngrok URL thay đổi mỗi lần restart)
   'allowed_origins_patterns' => [
@@ -34,5 +34,5 @@ return [
 
   'max_age' => 86400 , // Thời gian cache (giây)
 
-  'supports_credentials' => false, // Có cho phép cookie hoặc xác thực không
+  'supports_credentials' => true, // Cho phép refresh cookie được gửi cross-origin
 ];
