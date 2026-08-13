@@ -201,6 +201,7 @@ $(document).ready(function() {
         epTitle: v.video_title,
         epDescription: v.video_description,
         epThumbnail: v.video_thumbnail,
+        durationSeconds: v.duration_seconds,
         vimeoId: v.vimeo_id,
         dbId: v.id
       });
@@ -715,6 +716,7 @@ $(document).ready(function() {
       createdRow: function(row, data, dataIndex) {
         $(row).data('vimeo-id', data['vimeo_id']);
         $(row).data('vimeo-thumbnail', data['thumbnail_id']);
+        $(row).data('duration-seconds', data['duration_seconds']);
         if (selectedVimeoIds.includes(data['vimeo_id'])) {
           $(row).addClass('has-selected');
           $(row).find('.form-checkbox-input').prop('checked', true);
@@ -735,7 +737,8 @@ $(document).ready(function() {
         epTitle: rowData.title,
         epDescription: '',
         epThumbnail: rowData.thumbnail_id || rowData.videoThumbnail,
-        vimeoId: rowData.vimeo_id
+        vimeoId: rowData.vimeo_id,
+        durationSeconds: rowData.duration_seconds || null
       });
     });
 
@@ -869,6 +872,7 @@ $(document).ready(function() {
             epDescription: item.epDescription,
             vimeoId: item.vimeoId,
             epThumbnail: item.epThumbnail
+            ,durationSeconds: item.durationSeconds
           });
         }
       });

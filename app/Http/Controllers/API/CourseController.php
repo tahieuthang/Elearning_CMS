@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Support\Facades\Log;
+use App\Models\Course;
+use App\Services\LearningStreak\LearningCourseAccess;
+use App\Services\LearningStreak\LearningStreakService;
+use InvalidArgumentException;
+use RuntimeException;
 
 class CourseController extends Controller
 {
@@ -169,18 +174,54 @@ class CourseController extends Controller
         'course_video_id' => 'required|exists:course_videos,id',
         'watched_seconds' => 'required|integer|min:0',
         'total_seconds' => 'required|integer|min:1',
-        'is_completed' => 'nullable'
+        'is_completed' => 'nullable',
+        'watched_ranges' => 'nullable|array|max:' . config('learning_streak.max_ranges_per_request'),
+        'watched_ranges.*.start' => 'required_with:watched_ranges|numeric|min:0',
+        'watched_ranges.*.end' => 'required_with:watched_ranges|numeric|min:0',
+        'tracking_session_id' => 'nullable|uuid',
+        'event_id' => 'nullable|uuid',
+        'captured_at' => 'nullable|date',
+        'weekly_ranges' => 'nullable|array|max:' . config('learning_streak.max_ranges_per_request'),
+        'weekly_ranges.*.start' => 'required_with:weekly_ranges|numeric|min:0',
+        'weekly_ranges.*.end' => 'required_with:weekly_ranges|numeric|min:0',
       ]);
+
+      $ranges = $request->input('watched_ranges', $request->input('weekly_ranges', []));
+
+      if ($ranges && (!$request->filled('tracking_session_id') || !$request->filled('event_id') || !$request->filled('captured_at'))) {
+        throw ValidationException::withMessages([
+          'tracking_session_id' => ['tracking_session_id, event_id and captured_at are required with weekly_ranges.'],
+        ]);
+      }
 
       $customerId = auth('customer')->user()->id;
 
-      $result = $this->courseServices->trackVideoProgress(
-        $customerId,
-        $request->course_video_id,
-        $request->watched_seconds,
-        $request->total_seconds,
-        $request->is_completed
-      );
+      $result = DB::transaction(function () use ($request, $customerId, $ranges) {
+        $progress = $this->courseServices->trackVideoProgress(
+          $customerId,
+          $request->course_video_id,
+          $request->watched_seconds,
+          $request->total_seconds,
+          $request->is_completed,
+          $ranges
+        );
+
+        if ($ranges) {
+          $video = \App\Models\CourseVideo::findOrFail($request->course_video_id);
+          $progress['streak_summary'] = app(LearningStreakService::class)->recordRanges(
+            $customerId,
+            $video,
+            $ranges,
+            $request->tracking_session_id,
+            $request->captured_at,
+            (int) $request->total_seconds,
+          );
+        } else {
+          $progress['streak_summary'] = null;
+        }
+
+        return $progress;
+      });
 
       return $this->successResponse($result);
     } catch (ValidationException $e) {
@@ -190,8 +231,40 @@ class CourseController extends Controller
         'message' => 'Validation failed.',
         'errors' => $e->errors()
       ], 422);
+    } catch (InvalidArgumentException $e) {
+      return response()->json(['message' => $e->getMessage()], 422);
+    } catch (RuntimeException $e) {
+      return response()->json(['message' => $e->getMessage()], 409);
     } catch (\Exception $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
+
+  public function getLearningStreak()
+  {
+    try {
+      return $this->successResponse(app(LearningStreakService::class)->summary(auth('customer')->user()->id));
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' . __LINE__ . ' ' . $e);
+      return $this->internalServerErrorResponse();
+    }
+  }
+
+  public function startLearningStreakVisit(Request $request)
+  {
+    try {
+      $request->validate(['course_id' => 'required|exists:courses,id']);
+      $customerId = auth('customer')->user()->id;
+      $course = Course::findOrFail($request->course_id);
+      if (!app(LearningCourseAccess::class)->canAccess($customerId, $course)) {
+        return response()->json(['message' => 'Course access is required for streak tracking.'], 403);
+      }
+      return $this->successResponse(app(LearningStreakService::class)->startVisit($customerId, $course->id));
+    } catch (ValidationException $e) {
+      return response()->json(['message' => 'Validation failed.', 'errors' => $e->errors()], 422);
+    } catch (\Exception $e) {
+      Helper::createLogError(__FILE__ . ':' . __LINE__ . ' ' . $e);
       return $this->internalServerErrorResponse();
     }
   }

@@ -73,6 +73,8 @@ Route::group(['prefix' => 'course'], function () {
     Route::get('/customer/best-category', [CourseController::class, 'getCategoryBestOfUser']);
     Route::get('/notifications/new-courses/{id}', [CourseController::class, 'getNewCourses']);
     Route::post('/video/progress', [CourseController::class, 'postVideoProgress']);
+    Route::get('/streak', [CourseController::class, 'getLearningStreak']);
+    Route::post('/streak/visit', [CourseController::class, 'startLearningStreakVisit']);
     Route::post('/quiz/submit', [CourseController::class, 'submitQuiz']);
     Route::post('/quiz/submit/{id}', [CourseController::class, 'submitQuizLegacy']);
   });

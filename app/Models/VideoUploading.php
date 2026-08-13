@@ -11,6 +11,7 @@ class VideoUploading extends Model
     'video_id',
     'vimeo_id',
     'file_path',
+    'duration_seconds',
     'thumbnail_id',
     'job_id',
     'job_status',
@@ -20,4 +21,7 @@ class VideoUploading extends Model
   ];
 
   public $timestamps = true;
+  protected $casts = [
+    'duration_seconds' => 'integer',
+  ];
 }

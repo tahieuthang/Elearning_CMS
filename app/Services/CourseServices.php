@@ -236,6 +236,7 @@ class CourseServices
                 'video_description' => $item['epDescription'] ?? '',
                 'vimeo_id' => $item['vimeoId'] ?? 0,
                 'video_thumbnail' => $item['epThumbnail'] ?? '',
+                'duration_seconds' => !empty($item['durationSeconds']) ? (int) $item['durationSeconds'] : null,
                 'order' => $index,
               ]);
             } elseif ($item['type'] === 'quiz') {
@@ -271,17 +272,18 @@ class CourseServices
         $videoDataToSave = [];
         $videoList = json_decode($formData['video-list']);
         if (!empty($videoList)) {
-            foreach ($videoList as $video) {
-                $videoDataToSave[] = [
-                    'course_id' => $courseId,
-                    'video_title' => $video->epTitle,
-                    'video_description' => $video->epDescription,
-                    'vimeo_id' => $video->vimeoId,
-                    'video_thumbnail' => $video->epThumbnail,
-                    'created_at' => Carbon::now()->toDateTimeString(),
-                    'created_at' => Carbon::now()->toDateTimeString(),
-                ];
-            }
+          foreach ($videoList as $video) {
+            $videoDataToSave[] = [
+              'course_id' => $courseId,
+              'video_title' => $video->epTitle,
+              'video_description' => $video->epDescription,
+              'vimeo_id' => $video->vimeoId,
+              'video_thumbnail' => $video->epThumbnail,
+              'duration_seconds' => !empty($video->durationSeconds) ? (int) $video->durationSeconds : null,
+              'created_at' => Carbon::now()->toDateTimeString(),
+              'created_at' => Carbon::now()->toDateTimeString(),
+            ];
+          }
         }
         CourseVideo::insert($videoDataToSave);
       }
@@ -368,8 +370,8 @@ class CourseServices
       CourseVideo::where('course_id', $id)->delete();
       $existingQuizIds = \App\Models\Quiz::where('course_id', $id)->pluck('id');
       if ($existingQuizIds->isNotEmpty()) {
-        \App\Models\QuizOption::whereIn('question_id', function($q) use ($existingQuizIds) {
-            $q->select('id')->from('quiz_questions')->whereIn('quiz_id', $existingQuizIds);
+        \App\Models\QuizOption::whereIn('question_id', function ($q) use ($existingQuizIds) {
+          $q->select('id')->from('quiz_questions')->whereIn('quiz_id', $existingQuizIds);
         })->delete();
         \App\Models\QuizQuestion::whereIn('quiz_id', $existingQuizIds)->delete();
         \App\Models\Quiz::where('course_id', $id)->delete();
@@ -386,6 +388,7 @@ class CourseServices
                 'video_description' => $item['epDescription'] ?? '',
                 'vimeo_id' => $item['vimeoId'] ?? 0,
                 'video_thumbnail' => $item['epThumbnail'] ?? '',
+                'duration_seconds' => !empty($item['durationSeconds']) ? (int) $item['durationSeconds'] : null,
                 'order' => $index,
               ]);
             } elseif ($item['type'] === 'quiz') {
@@ -417,17 +420,18 @@ class CourseServices
             }
           }
         }
-      } elseif(!empty($formData['video-list'])) {
+      } elseif (!empty($formData['video-list'])) {
         $courseVideoData = [];
         $videoList = json_decode($formData['video-list']);
-        if(!empty($videoList)) {
-          foreach($videoList as $video) {
+        if (!empty($videoList)) {
+          foreach ($videoList as $video) {
             $courseVideoData[] = [
               'course_id' => $id,
               'video_title' => $video->epTitle,
               'video_description' => $video->epDescription,
               'vimeo_id' => $video->vimeoId,
               'video_thumbnail' => $video->epThumbnail,
+              'duration_seconds' => !empty($video->durationSeconds) ? (int) $video->durationSeconds : null,
               'updated_at' => Carbon::now()->toDateTimeString(),
             ];
           }
@@ -581,93 +585,93 @@ class CourseServices
 
   public function getCoursesList($filterData)
   {
-      // Check if rating columns exist (migration may not have run yet)
-      $hasRatingColumns = Schema::hasColumn('courses', 'rating_average') && Schema::hasColumn('courses', 'rating_count');
-      
-      $selectColumns = [
-        "id",
-        "title",
-        "description",
-        "thumbnail",
-        "banner",
-        "author",
-        "authorDescription",
-        "course_duration",
-        "content",
-        "original_price",
-        "sale_off_price",
-      ];
-      
-      // Add rating columns only if they exist
-      if ($hasRatingColumns) {
-        $selectColumns[] = "rating_average";
-        $selectColumns[] = "rating_count";
+    // Check if rating columns exist (migration may not have run yet)
+    $hasRatingColumns = Schema::hasColumn('courses', 'rating_average') && Schema::hasColumn('courses', 'rating_count');
+
+    $selectColumns = [
+      "id",
+      "title",
+      "description",
+      "thumbnail",
+      "banner",
+      "author",
+      "authorDescription",
+      "course_duration",
+      "content",
+      "original_price",
+      "sale_off_price",
+    ];
+
+    // Add rating columns only if they exist
+    if ($hasRatingColumns) {
+      $selectColumns[] = "rating_average";
+      $selectColumns[] = "rating_count";
+    }
+
+    $results = Course::select($selectColumns)->with([
+      'courseCategories:id,category_name',
+      'courseTags:id,tag_name'
+    ]);
+    $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
+    $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
+
+    $customerInfo = auth('customer')->user();
+    $myCourses = filter_var($filterData['my_courses'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    if ($myCourses && $customerInfo) {
+      $purchasedCourseIds = DB::table('order_items')
+        ->join('orders', 'order_items.order_id', '=', 'orders.id')
+        ->where('orders.customer_id', $customerInfo->id)
+        ->where('orders.status', config('constants.order_status.completed'))
+        ->pluck('course_id')
+        ->toArray();
+
+      $progressCourseIds = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
+        ->pluck('course_id')
+        ->toArray();
+
+      $myCourseIds = array_unique(array_merge($purchasedCourseIds, $progressCourseIds));
+      $results->whereIn('courses.id', $myCourseIds);
+    }
+
+    if (!empty($filterData['status'])) {
+      $results->whereIn('status', $filterData['status']);
+    }
+
+    if (!empty($filterData['category_name'])) {
+      $results->whereHas('courseCategories', function ($q) use ($filterData) {
+        $q->whereIn('category_name', $filterData['category_name']);
+      });
+    }
+
+    if (!empty($filterData['tag_name'])) {
+      $results->whereHas('courseTags', function ($q) use ($filterData) {
+        $q->whereIn('tag_name', $filterData['tag_name']);
+      });
+    }
+
+    if (!empty($filterData['rating_average'])) {
+      $results->where('rating_average', '>=', $filterData['rating_average']);
+    }
+
+    if (!empty($filterData['sort_by'])) {
+      if ($filterData['sort_by'] === 'price-low') {
+        $results->orderBy('sale_off_price', 'asc');
+      } elseif ($filterData['sort_by'] === 'price-high') {
+        $results->orderBy('sale_off_price', 'desc');
+      } elseif ($filterData['sort_by'] === 'rating') {
+        $results->orderBy('rating_average', 'desc');
       }
-      
-      $results = Course::select($selectColumns)->with([
-        'courseCategories:id,category_name',
-        'courseTags:id,tag_name'
-      ]);
-      $perPage = !empty($filterData['per_page']) ? $filterData['per_page'] : config('constants.per_page');
-      $page = !empty($filterData['page']) ? $filterData['page'] : config('constants.page');
+    }
 
-      $customerInfo = auth('customer')->user();
-      $myCourses = filter_var($filterData['my_courses'] ?? false, FILTER_VALIDATE_BOOLEAN);
-      if ($myCourses && $customerInfo) {
-        $purchasedCourseIds = DB::table('order_items')
-          ->join('orders', 'order_items.order_id', '=', 'orders.id')
-          ->where('orders.customer_id', $customerInfo->id)
-          ->where('orders.status', config('constants.order_status.completed'))
-          ->pluck('course_id')
-          ->toArray();
-
-        $progressCourseIds = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
-          ->pluck('course_id')
-          ->toArray();
-
-        $myCourseIds = array_unique(array_merge($purchasedCourseIds, $progressCourseIds));
-        $results->whereIn('courses.id', $myCourseIds);
-      }
-
-      if (!empty($filterData['status'])) {
-        $results->whereIn('status', $filterData['status']);
-      }
-
-      if (!empty($filterData['category_name'])) {
-        $results->whereHas('courseCategories', function ($q) use ($filterData) {
-          $q->whereIn('category_name', $filterData['category_name']);
-        });
-      }
-
-      if (!empty($filterData['tag_name'])) {
-        $results->whereHas('courseTags', function ($q) use ($filterData) {
-          $q->whereIn('tag_name', $filterData['tag_name']);
-        });
-      }
-
-      if (!empty($filterData['rating_average'])) {
-        $results->where('rating_average', '>=', $filterData['rating_average']);
-      }
-
-      if (!empty($filterData['sort_by'])) {
-        if ($filterData['sort_by'] === 'price-low') {
-          $results->orderBy('sale_off_price', 'asc');
-        } elseif ($filterData['sort_by'] === 'price-high') {
-          $results->orderBy('sale_off_price', 'desc');
-        } elseif ($filterData['sort_by'] === 'rating') {
-          $results->orderBy('rating_average', 'desc');
-        }
-      }
-
-      if (isset($filterData['keyword'])) {
-        $results->where(function ($q) use ($filterData) {
-          $likeStr = '%' . Helper::escapeLike($filterData['keyword']) . '%';
-          $q->where('courses.title', 'like', $likeStr)
-            ->orWhere('courses.description', 'like', $likeStr)
-            ->orWhere('courses.content', 'like', $likeStr);
-        });
-      }
-      return $results->paginate($perPage, ['*'], '', $page);
+    if (isset($filterData['keyword'])) {
+      $results->where(function ($q) use ($filterData) {
+        $likeStr = '%' . Helper::escapeLike($filterData['keyword']) . '%';
+        $q->where('courses.title', 'like', $likeStr)
+          ->orWhere('courses.description', 'like', $likeStr)
+          ->orWhere('courses.content', 'like', $likeStr);
+      });
+    }
+    return $results->paginate($perPage, ['*'], '', $page);
   }
 
   // Hàm này giúp render ra all course, course nào đã dc mua sẽ đc format lại bằng is_bought = true
@@ -708,7 +712,7 @@ class CourseServices
     foreach ($courseList as $course) {
       $courseIds[] = $course->id;
     }
-    
+
     $progressData = [];
     if ($customerInfo && !empty($courseIds)) {
       $progressData = \App\Models\CustomerCourseProgress::where('customer_id', $customerInfo->id)
@@ -820,12 +824,12 @@ class CourseServices
         ['customer_id', $customerInfo->id],
         ['status', config('constants.order_status.completed')]
       ])
-      ->whereHas('courses', function ($q) use ($id) {
-        $q->where('courses.id', $id)
-        ->where('status', config('constants.course_status_by_text.active'));
-      })
+        ->whereHas('courses', function ($q) use ($id) {
+          $q->where('courses.id', $id)
+            ->where('status', config('constants.course_status_by_text.active'));
+        })
         ->exists();
-      if($isBought) {
+      if ($isBought) {
         $courseDetail->is_bought = $isBought;
       }
 
@@ -911,22 +915,23 @@ class CourseServices
     }
   }
 
-  public function getReviewByCourse($id, $request) {
+  public function getReviewByCourse($id, $request)
+  {
     try {
       $page = !empty($request->page) ? $request->page : config('constants.page');
       $perPage = !empty($request->per_page) ? $request->per_page : config('constants.per_page');
 
       $listReviewByCourse = Review::with(['customer', 'course'])->where('course_id', $id);
       $countReviews = Review::where('course_id', $id)->count();
-     
+
       $numberRate = range(1, 5);
       $rawRateData = DB::table('reviews')->select('rate', DB::raw('count(*) as total'))->where('course_id', $id)
-      ->groupBy('rate')->orderBy('rate', 'desc')->pluck('total', 'rate');
+        ->groupBy('rate')->orderBy('rate', 'desc')->pluck('total', 'rate');
       $rateData = collect();
       $totalRate = 0;
       $totalPoint = 0;
-      
-      foreach($numberRate as $value) {
+
+      foreach ($numberRate as $value) {
         $total = $rawRateData[$value] ?? 0;
         $percent = $countReviews > 0 ? round(($total / $countReviews) * 100, 2) : 0;
         $rateData->push((object)[
@@ -963,10 +968,10 @@ class CourseServices
       ['customer_id', $userId],
       ['status', config('constants.order_status.completed')]
     ])
-    ->whereHas('courses', function ($q) use ($data) {
-      $q->where('courses.id', $data['course_id'])
-      ->where('status', config('constants.course_status_by_text.active'));;
-    })->exists();
+      ->whereHas('courses', function ($q) use ($data) {
+        $q->where('courses.id', $data['course_id'])
+          ->where('status', config('constants.course_status_by_text.active'));;
+      })->exists();
     if (!$isBought) {
       throw new \Exception('Course not purchased');
     }
@@ -976,31 +981,32 @@ class CourseServices
       'comment' => $data['comment'],
       'rate' => $data['rate']
     ]);
-    
+
     // Update course rating
     $course = Course::find($data['course_id']);
     if ($course) {
       $course->updateRating();
     }
-    
+
     return $review;
   }
-  
-  public function getCategoryBestOfUser() {
+
+  public function getCategoryBestOfUser()
+  {
     try {
       $customerId = auth('customer')->user()->id;
       $courseData = Course::whereHas('orders', function ($q) use ($customerId) {
         $q->where('status', 3)->where('customer_id', $customerId);
       })->get();
       $categoryCount = collect();
-      foreach($courseData as $course) {
-        foreach($course->courseCategories as $category) {
+      foreach ($courseData as $course) {
+        foreach ($course->courseCategories as $category) {
           $categoryId = $category->id;
-          if($categoryCount->has($categoryId)) {
+          if ($categoryCount->has($categoryId)) {
             $categoryCount[$categoryId]++;
           } else {
             $categoryCount[$categoryId] = 1;
-          }    
+          }
         }
       }
       $maxCount = $categoryCount->max();
@@ -1014,16 +1020,17 @@ class CourseServices
     }
   }
 
-  public function getNewCourses($id) {
+  public function getNewCourses($id)
+  {
     try {
       $courseNew = Course::with('courseCategories')
-      ->whereHas('courseCategories', function ($q) use ($id) {
-        $q->where('post_categories.id', $id);
-      })
-      ->where('created_at', '>=', now()->subDays(3))
-      ->latest()
-      ->take(5)
-      ->get();
+        ->whereHas('courseCategories', function ($q) use ($id) {
+          $q->where('post_categories.id', $id);
+        })
+        ->where('created_at', '>=', now()->subDays(3))
+        ->latest()
+        ->take(5)
+        ->get();
       return $courseNew;
     } catch (\Exception $e) {
       return [
@@ -1086,7 +1093,7 @@ class CourseServices
   /**
    * Save progress for a video and update overall course progress.
    */
-  public function trackVideoProgress($customerId, $courseVideoId, $watchedSeconds, $totalSeconds, $isCompletedInput = null)
+  public function trackVideoProgress($customerId, $courseVideoId, $watchedSeconds, $totalSeconds, $isCompletedInput = null, array $watchedRanges = [])
   {
     $courseVideo = CourseVideo::findOrFail($courseVideoId);
     $courseId = $courseVideo->course_id;
@@ -1098,17 +1105,30 @@ class CourseServices
 
     $progress->course_id = $courseId;
     $progress->total_seconds = max($progress->total_seconds, $totalSeconds);
-    $progress->watched_seconds = max($progress->watched_seconds, $watchedSeconds);
+
+    if ($watchedRanges !== []) {
+      $existingRanges = $progress->watched_ranges ?? [];
+      if ($existingRanges === [] && $progress->watched_seconds > 0) {
+        // Historical rows have no range information. Preserve their scalar
+        // total as a conservative baseline until the progress is reset.
+        $existingRanges = [[0, min($progress->watched_seconds, $progress->total_seconds)]];
+      }
+
+      $merged = \App\Services\LearningStreak\RangeMerger::merge(
+        $existingRanges,
+        $watchedRanges,
+        $progress->total_seconds,
+      );
+      $progress->watched_ranges = $merged['ranges'];
+      $progress->watched_seconds = $merged['total_seconds'];
+    } elseif (($progress->watched_ranges ?? []) === []) {
+      // Legacy clients do not send ranges. Keep their existing behavior until
+      // all clients use range-based tracking.
+      $progress->watched_seconds = max($progress->watched_seconds, $watchedSeconds);
+    }
 
     if ($progress->total_seconds > 0 && $progress->watched_seconds >= ($progress->total_seconds * 0.9)) {
       $progress->is_completed = true;
-    }
-
-    if ($isCompletedInput === true || $isCompletedInput === 1 || $isCompletedInput === 'true') {
-      $progress->is_completed = true;
-      if ($progress->total_seconds > 0) {
-        $progress->watched_seconds = $progress->total_seconds;
-      }
     }
 
     $progress->save();
@@ -1156,12 +1176,12 @@ class CourseServices
       // Compare correct option IDs with selected option IDs
       sort($correctOptionIds);
       sort($selectedOptionIds);
-      
+
       $isCorrect = false;
       if (count($correctOptionIds) > 0) {
         $isCorrect = ($correctOptionIds === $selectedOptionIds);
       }
-      
+
       if ($isCorrect) {
         $correctCount++;
       }

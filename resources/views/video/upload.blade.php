@@ -99,7 +99,19 @@
     const maxCapacity = {{ \Config::get('constants.max_capacity_video_upload') }}
 
     var meta_token = $("meta[name=csrf-token]");
-    $("#input-pd").fileinput({
+    const videoDurationByName = {};
+    $("#input-pd").on('fileloaded', function(event, file) {
+        const preview = document.createElement('video');
+        preview.preload = 'metadata';
+        preview.onloadedmetadata = function() {
+            const duration = Math.round(preview.duration);
+            if (Number.isFinite(duration) && duration > 0) {
+                videoDurationByName[file.name] = duration;
+            }
+            URL.revokeObjectURL(preview.src);
+        };
+        preview.src = URL.createObjectURL(file);
+    }).fileinput({
             maxFileSize: maxCapacity,
             enableResumableUpload: true,
             allowedPreviewTypes: ['video'],
@@ -113,9 +125,11 @@
             initialPreview: [],
             initialPreviewConfig: [],
             uploadUrl: '/video/uploadVideo',
-            uploadExtraData: function() {
+            uploadExtraData: function(previewId, index) {
+                const file = $('#input-pd')[0].files[index] || $('#input-pd')[0].files[0];
                 return {
                     '_token': $('input[name="_token"]').val(),
+                    'duration_seconds': file ? (videoDurationByName[file.name] || null) : null,
                 }
             },
             initialPreviewAsData: true, // identify if you are sending preview data only and not the raw markup,

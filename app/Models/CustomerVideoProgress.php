@@ -13,11 +13,19 @@ class CustomerVideoProgress extends Model
         'course_id',
         'course_video_id',
         'watched_seconds',
+        'watched_ranges',
         'total_seconds',
         'is_completed',
     ];
 
     public $timestamps = true;
+
+    protected $casts = [
+        'watched_ranges' => 'array',
+        'watched_seconds' => 'integer',
+        'total_seconds' => 'integer',
+        'is_completed' => 'boolean',
+    ];
 
     public function courseVideo()
     {

@@ -208,7 +208,10 @@ class VideoServices
 
         // Trigger saveVideoId and dispatch Job when file is completely assembled on server
         if ($isCompleted) {
-          $this->saveVideoId($fileId, 'uploads/' . $fileName);
+          $durationSeconds = isset($_POST['duration_seconds']) && is_numeric($_POST['duration_seconds'])
+            ? (int) $_POST['duration_seconds']
+            : null;
+          $this->saveVideoId($fileId, 'uploads/' . $fileName, $durationSeconds);
         }
 
         $zoomUrl = '/uploads/' . $fileName;
@@ -255,7 +258,7 @@ class VideoServices
     fclose($handle);
   }
 
-  public function saveVideoId($videoId, $filePath)
+  public function saveVideoId($videoId, $filePath, $durationSeconds = null)
   {
     try {
       $cleanPath = ltrim($filePath, '/');
@@ -274,6 +277,7 @@ class VideoServices
       $data = [
         'video_id' => $videoId,
         'file_path' => $filePath,
+        'duration_seconds' => $durationSeconds && $durationSeconds > 0 ? $durationSeconds : null,
         'created_at' => Carbon::now()->toDateTimeString()
       ];
       $videoUploadingRecordId = VideoUploading::insertGetId($data);
