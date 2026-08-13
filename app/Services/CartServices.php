@@ -17,11 +17,29 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CartServices
 {
+  public static function resolveCurrentPrice($course)
+  {
+    return $course->sale_off_price !== null
+      ? $course->sale_off_price
+      : $course->original_price;
+  }
+
   public function getCartContent()
   {
-     return Cart::with(['course'])
-    ->where('customer_id', auth('customer')->user()->id)
-    ->get();
+    return Cart::select(
+      'carts.id',
+      'carts.customer_id',
+      'carts.course_id',
+      'carts.course_title',
+      'carts.quantity',
+      DB::raw('CASE WHEN courses.sale_off_price IS NULL THEN courses.original_price ELSE courses.sale_off_price END AS price'),
+      'carts.created_at',
+      'carts.updated_at'
+    )
+      ->with(['course'])
+      ->join('courses', 'courses.id', '=', 'carts.course_id')
+      ->where('carts.customer_id', auth('customer')->user()->id)
+      ->get();
   }
 
   public function addCartItem($data)
@@ -45,7 +63,7 @@ class CartServices
         'course_id' => $data['course_id'],
         'course_title' => $cource->title,
         'quantity' => $data['quantity'],
-        'price' => $cource->sale_off_price ? $cource->sale_off_price : $cource->original_price,
+        'price' => self::resolveCurrentPrice($cource),
       ]);
     }
   }
