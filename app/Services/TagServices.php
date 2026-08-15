@@ -22,10 +22,10 @@ class TagServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('tag.edit')) {
-          $action .= '<a href="/tag/detail/' . $row->id . '" class="edit btn btn-primary btn-sm">' . __('tag.update_tag') . '</a>';
+          $action .= '<a href="/tag/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon" title="' . e(__('tag.update_tag')) . '" aria-label="' . e(__('tag.update_tag')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
         }
         if (Helper::checkPermission('tag.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->tag_name . '" class="btn-delete-tag btn btn-danger btn-sm">' . __('tag.delete_tag') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->tag_name) . '" class="btn-delete-tag btn btn-danger btn-sm btn-action-icon" title="' . e(__('tag.delete_tag')) . '" aria-label="' . e(__('tag.delete_tag')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })

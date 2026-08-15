@@ -137,7 +137,7 @@ class VideoServices
       })
       ->addColumn('action', function ($row) {
         if ($row->job_status === config('constants.job_status.fail')) {
-          return '<button type="button" class="btn btn-block btn-warning">Cập nhật</button>';
+          return '<button type="button" class="btn btn-warning btn-sm btn-action-icon" title="Cập nhật" aria-label="Cập nhật" data-toggle="tooltip"><i class="fas fa-rotate-right"></i></button>';
         }
         return '';
       })
@@ -159,7 +159,7 @@ class VideoServices
         return '<img style="width: 120px;height: 120px;" src="' . url('/images/default_image.jpg') . '" />';
       })
       ->addColumn('action', function ($row) {
-        return '<button type="button" class="btn btn-block btn-info btn-info-video" style="width: 130px;" video-id="' . e($row->id) . '">Xem video</button>';
+        return '<button type="button" class="btn btn-info btn-sm btn-action-icon btn-info-video" title="Xem video" aria-label="Xem video" data-toggle="tooltip" video-id="' . e($row->id) . '"><i class="fas fa-eye"></i></button>';
       })
       ->rawColumns(['action', 'videoThumbnail'])
       ->make(true);
@@ -414,7 +414,7 @@ class VideoServices
         return $row->created_at;
       })
       ->addColumn('action', function ($row) {
-        return '<button type="button" class="btn btn-block btn-info btn-info-video" style=" width: 130px; " video-id="' . e($row->id) . '">Xem video</button>';
+        return '<button type="button" class="btn btn-info btn-sm btn-action-icon btn-info-video" title="Xem video" aria-label="Xem video" data-toggle="tooltip" video-id="' . e($row->id) . '"><i class="fas fa-eye"></i></button>';
       })
       ->rawColumns(['videoThumbnail', 'check', 'action'])
       ->make(true);

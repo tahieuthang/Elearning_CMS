@@ -8,6 +8,26 @@
   width: 50px !important;
   height: 50px !important;
 }
+
+/* Compact icon-only actions used by admin DataTables. */
+.btn-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0 !important;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.btn-action-icon + .btn-action-icon {
+  margin-left: 4px;
+}
+
+.btn-action-icon i {
+  font-size: 13px;
+}
 /* Absolute Center Spinner */
 .hidden {
   display: none;

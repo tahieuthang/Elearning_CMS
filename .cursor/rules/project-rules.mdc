@@ -1,0 +1,13 @@
+---
+description: Mandatory architecture, safety, style, and testing rules for Elearning CMS
+globs:
+alwaysApply: true
+---
+
+Before any search, command, plan, review, or edit, read
+`docs/ai/PROJECT_RULES.md` completely and comply with it.
+
+Non-overridable constraints: never commit or push; never discard existing user
+changes; never expose secrets; inspect Git status before editing; keep changes
+task-scoped; report only verification that was actually run.
+

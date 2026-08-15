@@ -27,4 +27,6 @@ yarn-error.log
 /.config
 /public/uploads
 .cache/
-/docs
+/docs/*
+!/docs/ai/
+!/docs/ai/**

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Laravel API Contract Change"
+  short_description: "Safely change Laravel API contracts"
+  default_prompt: "Use $laravel-api-contract-change to safely implement this Laravel API contract change."

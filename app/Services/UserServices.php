@@ -70,10 +70,10 @@ class UserServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('admin.edit')) {
-          $action .= '<a href="/admin/detail/' . $row->id . '" class="edit btn btn-primary btn-sm">' . __('admin.detail_admin') . '</a>';
+          $action .= '<a href="/admin/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon" title="' . e(__('admin.detail_admin')) . '" aria-label="' . e(__('admin.detail_admin')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
         }
         if (Helper::checkPermission('admin.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->username . '" class="btn-delete-user btn btn-danger btn-sm">' . __('admin.delete_admin') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->username) . '" class="btn-delete-user btn btn-danger btn-sm btn-action-icon" title="' . e(__('admin.delete_admin')) . '" aria-label="' . e(__('admin.delete_admin')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })
@@ -195,9 +195,9 @@ class UserServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('role.edit')) {
-          $action .= '<a href="/role/detail/' . $row->id . '" class="edit btn btn-primary btn-sm mr-1">' . __('role.detail_role') . '</a>';
+          $action .= '<a href="/role/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon mr-1" title="' . e(__('role.detail_role')) . '" aria-label="' . e(__('role.detail_role')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
         }
-        $action .= '<button data-id="' . $row->id . '" data-name="' . $row->role_name . '" class="btn-delete-role btn btn-danger btn-sm">' . __('role.delete_role') . '</button>';
+        $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->role_name) . '" class="btn-delete-role btn btn-danger btn-sm btn-action-icon" title="' . e(__('role.delete_role')) . '" aria-label="' . e(__('role.delete_role')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
 
         return $action;
       })
@@ -350,10 +350,10 @@ class UserServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('permission.edit')) {
-          $action .= '<a href="/permission/detail/' . $row->id . '" class="edit btn btn-primary btn-sm mr-1">' . __('permission.detail_permission') . '</a>';
+          $action .= '<a href="/permission/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon mr-1" title="' . e(__('permission.detail_permission')) . '" aria-label="' . e(__('permission.detail_permission')) . '" data-toggle="tooltip"><i class="fas fa-eye"></i></a>';
         }
         if (Helper::checkPermission('permission.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->permission_name . '" class="btn-delete-permission btn btn-danger btn-sm">' . __('permission.delete_permission') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->permission_name) . '" class="btn-delete-permission btn btn-danger btn-sm btn-action-icon" title="' . e(__('permission.delete_permission')) . '" aria-label="' . e(__('permission.delete_permission')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })

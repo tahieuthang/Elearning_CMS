@@ -62,10 +62,10 @@ class CourseServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('course.edit')) {
-          $action .= '<a href="/courses/detail/' . $row->id . '" class="edit btn btn-primary btn-sm mr-1">' . __('course.detail_course') . '</a>';
+          $action .= '<a href="/courses/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon mr-1" title="' . e(__('course.detail_course')) . '" aria-label="' . e(__('course.detail_course')) . '" data-toggle="tooltip"><i class="fas fa-eye"></i></a>';
         }
         if (Helper::checkPermission('course.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->title . '" class="btn-delete-course btn btn-danger btn-sm">' . __('course.delete_course') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->title) . '" class="btn-delete-course btn btn-danger btn-sm btn-action-icon" title="' . e(__('course.delete_course')) . '" aria-label="' . e(__('course.delete_course')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })
@@ -111,10 +111,10 @@ class CourseServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('course.edit')) {
-          $action .= '<a href="/courses/detail/' . $row->id . '" class="edit btn btn-primary btn-sm mr-1">' . __('course.detail_course') . '</a>';
+          $action .= '<a href="/courses/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon mr-1" title="' . e(__('course.detail_course')) . '" aria-label="' . e(__('course.detail_course')) . '" data-toggle="tooltip"><i class="fas fa-eye"></i></a>';
         }
         if (Helper::checkPermission('course.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->title . '" class="btn-delete-course btn btn-danger btn-sm">' . __('course.delete_course') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->title) . '" class="btn-delete-course btn btn-danger btn-sm btn-action-icon" title="' . e(__('course.delete_course')) . '" aria-label="' . e(__('course.delete_course')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })

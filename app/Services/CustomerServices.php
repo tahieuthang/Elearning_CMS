@@ -34,7 +34,7 @@ class CustomerServices
         // return __('customer.status_list')[$row->status];
       })
       ->addColumn('action', function ($row) {
-        return '<a href="/customer/detail/' . $row->id . '" class="edit btn btn-primary btn-sm">' . __('customer.edit_customer') . '</a>';
+        return '<a href="/customer/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon" title="' . e(__('customer.edit_customer')) . '" aria-label="' . e(__('customer.edit_customer')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
       })
       ->rawColumns(['action', 'image2D'])
       ->make(true);

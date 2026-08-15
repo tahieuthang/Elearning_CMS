@@ -50,10 +50,10 @@ class PostServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('post.edit')) {
-          $action .= '<a href="/posts/detail/' . $row->id . '" class="edit btn btn-primary btn-sm">' . __('post.update_post') . '</a>';
+          $action .= '<a href="/posts/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon" title="' . e(__('post.update_post')) . '" aria-label="' . e(__('post.update_post')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
         }
         if (Helper::checkPermission('post.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->title . '" class="btn-delete-post btn btn-danger btn-sm">' . __('post.delete_post') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->title) . '" class="btn-delete-post btn btn-danger btn-sm btn-action-icon" title="' . e(__('post.delete_post')) . '" aria-label="' . e(__('post.delete_post')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })

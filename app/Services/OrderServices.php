@@ -58,7 +58,7 @@ class OrderServices
         $action = "";
         if (Helper::checkPermission("order.detail")) {
           $action .=
-            '<a href="/order/detail/' . $row->id . '" class="edit btn btn-primary btn-sm mr-1">' . __("order.detail_order") . "</a>";
+            '<a href="/order/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon mr-1" title="' . e(__('order.detail_order')) . '" aria-label="' . e(__('order.detail_order')) . '" data-toggle="tooltip"><i class="fas fa-eye"></i></a>';
         }
         return $action;
       })

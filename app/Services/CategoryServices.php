@@ -33,10 +33,10 @@ class CategoryServices
       ->addColumn('action', function ($row) {
         $action = '';
         if (Helper::checkPermission('category.edit')) {
-          $action .= '<a href="/category/detail/' . $row->id . '" class="edit btn btn-primary btn-sm">' . __('category.update_category') . '</a>';
+          $action .= '<a href="/category/detail/' . $row->id . '" class="edit btn btn-primary btn-sm btn-action-icon" title="' . e(__('category.update_category')) . '" aria-label="' . e(__('category.update_category')) . '" data-toggle="tooltip"><i class="fas fa-pen-to-square"></i></a>';
         }
         if (Helper::checkPermission('category.delete')) {
-          $action .= '<button data-id="' . $row->id . '" data-name="' . $row->category_name . '" class="btn-delete-category btn btn-danger btn-sm">' . __('category.delete_category') . '</button>';
+          $action .= '<button type="button" data-id="' . $row->id . '" data-name="' . e($row->category_name) . '" class="btn-delete-category btn btn-danger btn-sm btn-action-icon" title="' . e(__('category.delete_category')) . '" aria-label="' . e(__('category.delete_category')) . '" data-toggle="tooltip"><i class="fas fa-trash"></i></button>';
         }
         return $action;
       })
