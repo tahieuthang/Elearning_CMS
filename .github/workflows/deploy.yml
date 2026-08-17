@@ -62,6 +62,26 @@ jobs:
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Stage Composer GitHub authentication on server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          COMPOSER_GITHUB_TOKEN: ${{ secrets.COMPOSER_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$COMPOSER_GITHUB_TOKEN" ]; then
+            echo "::error::Missing COMPOSER_GITHUB_TOKEN repository secret."
+            exit 1
+          fi
+
+          auth_file="$(mktemp)"
+          trap 'rm -f "$auth_file"' EXIT
+          umask 077
+          printf '{"github-oauth":{"github.com":"%s"}}' "$COMPOSER_GITHUB_TOKEN" > "$auth_file"
+
+          ssh "${SSH_USER}@${SSH_HOST}" \
+            'umask 077; rm -f /tmp/elearning-composer-auth.json; cat > /tmp/elearning-composer-auth.json; chmod 600 /tmp/elearning-composer-auth.json' \
+            < "$auth_file"
+
       - name: Deploy to production server
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
@@ -77,6 +97,18 @@ jobs:
           : "${PROJECT_PATH:=/var/www/elearning}"
           : "${BACKUP_DIR:=$HOME/elearning-backups}"
           : "${DEPLOY_REF:=dev}"
+          : "${COMPOSER_AUTH_FILE:=/tmp/elearning-composer-auth.json}"
+
+          cleanup_composer_auth() {
+            rm -f "$COMPOSER_AUTH_FILE"
+          }
+          trap cleanup_composer_auth EXIT HUP INT TERM
+
+          if [ ! -s "$COMPOSER_AUTH_FILE" ]; then
+            echo "Composer authentication payload is missing on the server."
+            exit 1
+          fi
+          export COMPOSER_AUTH_FILE
 
           compose() {
             docker compose -f docker-compose.yml "$@"
@@ -103,6 +135,7 @@ jobs:
 
           echo "Building Docker images..."
           compose build
+          rm -f "$COMPOSER_AUTH_FILE"
 
           echo "Backing up existing host uploads before volume migration..."
           if [ -d "$PROJECT_PATH/public/uploads" ]; then

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
@@ -11,7 +12,9 @@ WORKDIR /var/www
 
 COPY composer.json composer.lock ./
 
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
+RUN --mount=type=secret,id=composer_auth \
+    COMPOSER_AUTH="$(cat /run/secrets/composer_auth)" \
+    composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
 
 COPY package.json package-lock.json ./
 

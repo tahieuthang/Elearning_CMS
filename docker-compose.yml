@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      secrets:
+        - source: composer_auth
+          target: composer_auth
     image: elearning
     container_name: elearning-app
     restart: unless-stopped
@@ -96,3 +99,7 @@ volumes:
   mysql_data:
   public_build:
   public_uploads:
+
+secrets:
+  composer_auth:
+    file: "${COMPOSER_AUTH_FILE:?COMPOSER_AUTH_FILE is required for image builds}"
