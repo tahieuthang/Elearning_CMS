@@ -51,12 +51,12 @@ class CustomerController extends Controller
     return $token;
   }
 
-  private function refreshCookie(string $token, ?int $minutes = null)
+  private function refreshCookie(string $token)
   {
     return cookie(
       config('jwt.refresh_cookie'),
       $token,
-      $minutes ?? (int) config('jwt.refresh_cookie_minutes'),
+      (int) config('jwt.refresh_cookie_minutes'),
       '/api/customer',
       null,
       (bool) config('jwt.refresh_cookie_secure'),
@@ -244,7 +244,7 @@ class CustomerController extends Controller
 
     return response()->json([
       'message' => 'Logged out successfully'
-    ], 200)->withCookie($this->refreshCookie('deleted', -1));
+    ], 200)->withoutCookie(config('jwt.refresh_cookie'));
   }
 
   public function profile(Request $request)
