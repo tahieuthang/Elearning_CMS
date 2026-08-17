@@ -4,7 +4,7 @@ namespace Tests\Unit\LearningStreak;
 
 use App\Services\LearningStreak\WeekWindow;
 use Carbon\CarbonImmutable;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class WeekWindowTest extends TestCase
 {
