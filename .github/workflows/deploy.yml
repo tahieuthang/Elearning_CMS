@@ -89,6 +89,9 @@ jobs:
           git fetch --prune origin "$DEPLOY_REF"
           git reset --hard "origin/$DEPLOY_REF"
 
+          echo "Validating production Compose configuration..."
+          compose config --quiet
+
           if compose ps -q mysql | grep -q .; then
             echo "Creating database backup..."
             mkdir -p "$BACKUP_DIR"
