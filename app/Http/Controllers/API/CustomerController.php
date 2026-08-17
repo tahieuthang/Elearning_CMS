@@ -51,12 +51,12 @@ class CustomerController extends Controller
     return $token;
   }
 
-  private function refreshCookie(string $token)
+  private function refreshCookie(string $token, ?int $minutes = null)
   {
     return cookie(
       config('jwt.refresh_cookie'),
       $token,
-      (int) config('jwt.refresh_cookie_minutes'),
+      $minutes ?? (int) config('jwt.refresh_cookie_minutes'),
       '/api/customer',
       null,
       (bool) config('jwt.refresh_cookie_secure'),
@@ -86,7 +86,7 @@ class CustomerController extends Controller
         "confirmation_code" => Str::random(6),
       ];
       $customner = Customer::create($data);
-      
+
       $newCustomer = Customer::find($customner->id);
       $newCustomer->notify(new CustomerActiveNotification($newCustomer->confirmation_code));
       DB::commit();
@@ -127,23 +127,23 @@ class CustomerController extends Controller
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
       return $this->customErrorResponse(
-          ResponseCode::$NOT_FOUND,
-          $e->getMessage(),
-          Response::HTTP_NOT_FOUND
+        ResponseCode::$NOT_FOUND,
+        $e->getMessage(),
+        Response::HTTP_NOT_FOUND
       );
     } catch (ConflictHttpException $e) {
-        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-        DB::rollBack();
-        return $this->customErrorResponse(
-            ResponseCode::$CONFLICT,
-            $e->getMessage(),
-            Response::HTTP_CONFLICT
-        );
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return $this->customErrorResponse(
+        ResponseCode::$CONFLICT,
+        $e->getMessage(),
+        Response::HTTP_CONFLICT
+      );
     } catch (\Exception $e) {
-        // Handle any other exceptions
-        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-        DB::rollBack();
-        return $this->internalServerErrorResponse();
+      // Handle any other exceptions
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      DB::rollBack();
+      return $this->internalServerErrorResponse();
     }
   }
 
@@ -156,7 +156,7 @@ class CustomerController extends Controller
       ]);
 
       $customer = Customer::where('email', $request->email)->first();
-      if(!$customer) {
+      if (!$customer) {
         return response()->json([
           'status' => 404,
           'error' => 'Email not registerd',
@@ -166,10 +166,10 @@ class CustomerController extends Controller
       $token = Auth::guard('customer')
         ->setTTL((int) config('jwt.ttl'))
         ->attempt([
-        'email' => $request->email,
-        'password' => $request->password,
-        'status' => Config::get('constants.customer_status_enable'),
-      ]);
+          'email' => $request->email,
+          'password' => $request->password,
+          'status' => Config::get('constants.customer_status_enable'),
+        ]);
 
       if ($token) {
         $customer = Auth::guard('customer')->user();
@@ -244,7 +244,7 @@ class CustomerController extends Controller
 
     return response()->json([
       'message' => 'Logged out successfully'
-    ], 200)->withoutCookie(config('jwt.refresh_cookie'));
+    ], 200)->withCookie($this->refreshCookie('deleted', -1));
   }
 
   public function profile(Request $request)
@@ -359,8 +359,8 @@ class CustomerController extends Controller
       );
 
       return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Reset link sent to your email.'])
-            : throw ValidationException::withMessages(['email' => [__($status)]]);
+        ? response()->json(['message' => 'Reset link sent to your email.'])
+        : throw ValidationException::withMessages(['email' => [__($status)]]);
     } catch (ValidationException $e) {
       Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
       DB::rollBack();
@@ -446,10 +446,10 @@ class CustomerController extends Controller
   public function getOrderByCode(Request $request)
   {
     try {
-        $data = $this->customerServices->getOrderByCode($request->code);
-        return $this->successResponse($data);
+      $data = $this->customerServices->getOrderByCode($request->code);
+      return $this->successResponse($data);
     } catch (\Exception $e) {
-        Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
+      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
     }
   }
 }
