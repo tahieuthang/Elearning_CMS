@@ -9,10 +9,19 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
+
+COPY package.json package-lock.json ./
+
+RUN npm ci --no-audit --no-fund
+
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader \
- && npm install && npm run build \
+RUN composer dump-autoload --no-dev --optimize --no-interaction \
+ && npm run build \
+ && mkdir -p public/uploads \
  && chown -R www-data:www-data storage bootstrap/cache public/uploads \
  && chmod -R 775 storage bootstrap/cache public/uploads
 

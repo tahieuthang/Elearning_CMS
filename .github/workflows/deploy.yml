@@ -101,13 +101,21 @@ jobs:
           echo "Building Docker images..."
           compose build
 
+          echo "Backing up existing host uploads before volume migration..."
+          if [ -d "$PROJECT_PATH/public/uploads" ]; then
+            mkdir -p "$BACKUP_DIR"
+            uploads_backup="$BACKUP_DIR/uploads_$(date +%Y%m%d_%H%M%S).tar.gz"
+            tar -C "$PROJECT_PATH/public" -czf "$uploads_backup" uploads
+          else
+            echo "No host uploads directory found; skipping upload backup."
+          fi
+
+          echo "Initializing persistent upload and build asset volumes..."
+          compose --profile maintenance run --rm uploads-init
+          compose --profile maintenance run --rm assets
+
           echo "Starting containers..."
           compose up -d --remove-orphans
-
-          echo "Installing application dependencies and assets..."
-          compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
-          compose exec -T app npm install --no-audit --no-fund
-          compose exec -T app npm run build
 
           echo "Waiting for Laravel to become ready..."
           ready=false

@@ -4,9 +4,14 @@
 echo "⏳ Đợi database khởi động..."
 counter=0
 max_attempts=30
+db_host="${DB_HOST:-mysql}"
+db_port="${DB_PORT:-3306}"
+db_database="${DB_DATABASE:-vfl-academy}"
+db_username="${DB_USERNAME:-root}"
+db_password="${DB_PASSWORD:-root}"
 
 # Kiểm tra kết nối database bằng cách test query đơn giản
-until php -r "try { \$pdo = new PDO('mysql:host=mysql;port=3306;dbname=vfl-academy', 'root', 'root'); \$pdo->query('SELECT 1'); exit(0); } catch (Exception \$e) { exit(1); }" > /dev/null 2>&1 || [ $counter -ge $max_attempts ]; do
+until DB_HOST="$db_host" DB_PORT="$db_port" DB_DATABASE="$db_database" DB_USERNAME="$db_username" DB_PASSWORD="$db_password" php -r "try { \$dsn = sprintf('mysql:host=%s;port=%s;dbname=%s', getenv('DB_HOST'), getenv('DB_PORT'), getenv('DB_DATABASE')); \$pdo = new PDO(\$dsn, getenv('DB_USERNAME'), getenv('DB_PASSWORD')); \$pdo->query('SELECT 1'); exit(0); } catch (Exception \$e) { exit(1); }" > /dev/null 2>&1 || [ $counter -ge $max_attempts ]; do
   sleep 2
   counter=$((counter + 1))
   if [ $((counter % 5)) -eq 0 ]; then
