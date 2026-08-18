@@ -64,6 +64,8 @@ services:
     working_dir: /var/www
     env_file:
       - .env
+    volumes:
+      - public_uploads:/var/www/public/uploads
     depends_on:
       - app
       - mysql
@@ -93,7 +95,9 @@ services:
       sh -ec 'if [ ! -f /target/.initialized ]; then
       if [ -d /source ]; then cp -a /source/. /target/; fi;
       touch /target/.initialized;
-      fi'
+      fi;
+      chown -R 33:33 /target;
+      chmod -R ug+rwX /target'
 
 volumes:
   mysql_data:
