@@ -1,339 +1,287 @@
-# 🎓 E-Learning CMS - Backend System
+# E-Learning CMS Backend
 
-> Hệ thống quản lý nội dung học trực tuyến (CMS) được xây dựng bằng Laravel 11, cung cấp RESTful API và Admin Panel để quản lý khóa học, bài học, người dùng và thanh toán.
+Laravel 11 backend for a full-stack e-learning platform. The project provides a role-based administration panel for course operations and a JWT-protected REST API consumed by the Vue.js learner application.
 
-[![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
-[![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?style=flat&logo=php&logoColor=white)](https://www.php.net/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![Docker](https://img.shields.io/badge/Docker-20.10+-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+This repository is a portfolio/demo project focused on practical backend engineering: course commerce, media processing, learning progress, streak analytics, secure authentication, and Docker-based deployment.
 
----
+## Demo
 
-## 📋 Mục lục
+- Learner application: [app.viettech.click](https://app.viettech.click)
+- Public API: [api.viettech.click](https://api.viettech.click)
+- CMS administration: [cms.viettech.click](https://cms.viettech.click)
 
-- [Giới thiệu](#-giới-thiệu)
-- [Tính năng](#-tính-năng)
-- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
-- [Cấu trúc dự án](#-cấu-trúc-dự-án)
-- [Cài đặt và Chạy](#-cài-đặt-và-chạy)
-- [API Documentation](#-api-documentation)
-- [Kiến trúc](#-kiến-trúc)
-- [Dự định cải tiến](#-dự-định-cải-tiến)
-- [Tài liệu tham khảo](#-tài-liệu-tham-khảo)
+The payment flow currently uses the VNPay sandbox environment. Demo availability depends on the configured VPS, DNS, third-party credentials, and storage services.
 
----
+## Highlights
 
-## 🎯 Giới thiệu
+### Course and content operations
 
-**E-Learning CMS** là một hệ thống backend hoàn chỉnh cho nền tảng học trực tuyến, bao gồm:
+- Course CRUD with active/private status management
+- One-level categories and reusable tags
+- Course thumbnail, banner, rich-text description, and ordered lessons
+- Quiz and question management
+- Blog posts and hot-content management
+- Admin-side server-side DataTables, filtering, permissions, and PDF export
 
-- **CMS Admin Panel**: Giao diện web quản trị để quản lý nội dung, khóa học, người dùng
-- **RESTful API**: API đầy đủ cho frontend/mobile app với JWT authentication
-- **Payment Integration**: Tích hợp VNPAY cho thanh toán trực tuyến
-- **Video Management**: Upload và quản lý video qua Vimeo API với Queue Jobs
+### Learner commerce
 
-Dự án được xây dựng theo kiến trúc **MVC** và **Service Layer Pattern**, đảm bảo code dễ maintain và mở rộng.
+- Customer shopping cart and order history
+- Coupon validation and course-specific coupon management
+- VNPay sandbox payment URL generation, callback, and transaction tracking
+- Review and rating aggregation for courses
+- Free-course and purchased-course learning access flows
 
----
+### Media and asynchronous processing
 
-## ✨ Tính năng
+- Video upload pipeline backed by Laravel queue workers
+- Cloudflare R2/S3-compatible object storage for uploaded video files
+- Redis-backed queue processing
+- Stable public R2 URLs for learner playback
+- Separate persistent Docker volumes for MySQL data, uploaded files, and built assets
 
-### 🔐 Authentication & Authorization
-- ✅ Multi-guard authentication (Admin session-based, Customer JWT-based)
-- ✅ Role-based access control (RBAC) với Spatie Permission
-- ✅ Email verification cho customer
-- ✅ Password reset functionality
-- ✅ JWT token authentication cho API
+### Authentication and account security
 
-### 📚 Course Management
-- ✅ CRUD operations cho khóa học
-- ✅ Quản lý categories và tags
-- ✅ Upload thumbnail và banner
-- ✅ Rich text editor (CKEditor) cho nội dung
-- ✅ Quản lý video episodes (drag & drop sắp xếp)
-- ✅ Upload video lên Vimeo qua Queue Jobs
-- ✅ Course status management (active/private)
+- Session-based authentication for CMS administrators
+- JWT authentication for customer APIs
+- Short-lived access tokens kept in browser memory
+- Refresh tokens issued through HttpOnly, Secure, SameSite cookies
+- Six-digit email verification code with a 15-minute TTL
+- Verification-code resend cooldown and hourly rate limit
+- Password reset and customer profile management
+- Spatie Permission-based roles and permissions for CMS access
 
-### 👥 User Management
-- ✅ Quản lý admin users với permissions
-- ✅ Quản lý customers
-- ✅ Customer profile management
-- ✅ Customer achievements và statistics
+### Learning progress and streaks
 
-### 🛒 E-Commerce Features
-- ✅ Shopping cart functionality
-- ✅ Order management
-- ✅ Payment integration (VNPAY)
-- ✅ Transaction history
-- ✅ Order status tracking
+- Course-player-only learning activity tracking
+- Video progress based on watched ranges to reduce seek/jump inflation
+- Weekly per-video watched progress
+- Weekly learning summaries and current streak calculation
+- 30-minute watched-time target for a qualifying learning day
+- Offline progress synchronization window for temporary network loss
+- Dedicated unit tests for range merging and week-boundary behavior
 
-### 📝 Content Management
-- ✅ Blog/Post management
-- ✅ Category và tag system
-- ✅ Hot content management
-- ✅ Review và rating system
+## Technology
 
-### 📊 Admin Dashboard
-- ✅ Statistics và analytics
-- ✅ DataTables với server-side processing
-- ✅ Advanced search và filtering
-- ✅ Export data (PDF generation)
+### Backend
 
-### 🎥 Video Management
-- ✅ Vimeo API integration
-- ✅ Background video upload (Queue Jobs)
-- ✅ Video metadata management
-- ✅ Video preview và thumbnail
+- Laravel 11
+- PHP 8.2
+- MySQL 8
+- Redis
+- PHP-FPM and Nginx
+- Eloquent ORM and Laravel migrations
+- JWT Auth (`tymon/jwt-auth`)
+- Spatie Laravel Permission
+- Yajra Laravel DataTables
+- Laravel Queue
+- Sentry Laravel integration
 
----
+### CMS frontend
 
-## 🚀 Công nghệ sử dụng
+- Blade templates
+- AdminLTE 3
+- Bootstrap and jQuery
+- DataTables
+- Select2
+- CKEditor
+- Bootstrap FileInput
+- SweetAlert2
+- Vite
 
-### Backend Framework & Core
-- **Laravel 11** - PHP Framework
-- **PHP 8.2** - Programming Language
-- **MySQL 8.0** - Database
-- **Nginx** - Web Server
+### Infrastructure and integrations
 
-### Laravel Packages
-- **tymon/jwt-auth** - JWT Authentication cho API
-- **spatie/laravel-permission** - Role & Permission management
-- **yajra/laravel-datatables** - Server-side DataTables
-- **barryvdh/laravel-dompdf** - PDF generation
-- **vimeo/laravel** - Vimeo API integration
-- **laravel/sanctum** - API token authentication
+- Docker and Docker Compose
+- Cloudflare R2 / S3-compatible storage
+- VNPay sandbox
+- SMTP email delivery
+- GitHub Actions deployment workflow
+- VPS deployment with Nginx and HTTPS certificates
 
-### Frontend Technologies (Admin Panel)
-- **jQuery 3.7** - JavaScript library
-- **jQuery Validation** - Form validation
-- **DataTables** - Advanced tables
-- **Select2** - Advanced select boxes
-- **Bootstrap FileInput** - File upload widget
-- **CKEditor** - Rich text editor
-- **SweetAlert2** - Beautiful alerts
-- **jQuery UI** - UI interactions
-- **AdminLTE 3** - Admin dashboard template
+## Architecture
 
-### DevOps & Infrastructure
-- **Docker & Docker Compose** - Containerization
-- **Vite** - Frontend build tool
-- **Git** - Version control
+The main request path is:
 
-### Third-party APIs
-- **Vimeo API** - Video hosting và streaming
-- **VNPAY** - Payment gateway
-
----
-
-## 📁 Cấu trúc dự án
-
+```text
+Route
+  -> Middleware
+  -> Controller
+  -> Service
+  -> Eloquent Model / Query
+  -> MySQL
+  -> JSON response
 ```
+
+The backend keeps HTTP transport concerns in controllers and places reusable business operations in service classes. Queue jobs handle work that should not block a request, such as transferring uploaded media to R2.
+
+Learning streak tracking is separated into focused services:
+
+```text
+Course player
+  -> progress API
+  -> watched-range merger
+  -> weekly video progress
+  -> weekly learning summary
+  -> streak response for My Learning
+```
+
+Production Compose intentionally avoids mounting the application source into the runtime container. Each deployment builds an immutable application image while MySQL, uploaded files, and built assets live in persistent Docker volumes.
+
+## Repository structure
+
+```text
 Elearning_CMS/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/        # Controllers (Web & API)
-│   │   │   ├── API/           # API Controllers
-│   │   │   └── Auth/          # Authentication Controllers
-│   │   └── Middleware/        # Custom Middleware
-│   ├── Models/                 # Eloquent Models
-│   ├── Services/               # Business Logic Layer
-│   ├── Jobs/                   # Queue Jobs (Vimeo upload)
-│   ├── Notifications/          # Email Notifications
-│   └── Helpers/                # Helper Functions
-├── config/                     # Configuration files
+│   ├── Http/Controllers/       # CMS and API adapters
+│   ├── Jobs/                   # Queue jobs, including R2 upload jobs
+│   ├── Models/                 # Eloquent models and relationships
+│   ├── Notifications/          # Email notifications
+│   ├── Observers/              # Model side effects, such as rating updates
+│   └── Services/               # Application and domain operations
+├── config/                     # Laravel and feature configuration
 ├── database/
-│   ├── migrations/             # Database migrations
-│   └── seeders/                # Database seeders
+│   ├── migrations/             # Versioned schema changes
+│   └── seeders/                # Development/demo seed data
+├── resources/views/            # CMS Blade views
 ├── routes/
-│   ├── web.php                 # Web routes (CMS)
-│   └── api.php                 # API routes
-├── resources/
-│   └── views/                  # Blade templates
-├── public/                      # Public assets
-├── docker-compose.dev.yml      # Docker Compose (Dev)
-├── docker-compose.yml          # Docker Compose (Production)
-└── Dockerfile                  # Docker image definition
+│   ├── api.php                 # Customer API routes
+│   └── web.php                 # CMS web routes
+├── tests/
+│   ├── Feature/                # HTTP and integration behavior
+│   └── Unit/                   # Domain and deterministic service tests
+├── docker-compose.dev.yml      # Local development services
+├── docker-compose.yml          # Production Compose configuration
+├── Dockerfile                  # Application image build
+└── .github/workflows/          # CI/deployment workflow
 ```
 
-**Kiến trúc:**
-- **MVC Pattern**: Model-View-Controller separation
-- **Service Layer**: Business logic tách biệt khỏi Controllers
-- **Repository Pattern**: (Có thể mở rộng) Abstract database access
+## Local development
 
----
+### Prerequisites
 
-## 🛠️ Cài đặt và Chạy
-
-### Yêu cầu hệ thống
 - Docker Engine 20.10+
-- Docker Compose 2.0+
+- Docker Compose v2+
 - Git
-- Node.js 18+ (cho build assets)
+- PHP 8.2 and Composer if running Laravel directly on the host
+- Node.js and pnpm if building frontend assets outside Docker
 
-### Quick Start với Docker
+### Docker development setup
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/Kamadee/Elearning_CMS
+git clone https://github.com/Kamadee/Elearning_CMS.git
 cd Elearning_CMS
-
-# 2. Tạo file .env
 cp .env.example .env
 
-# 3. Cấu hình database trong .env
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=vfl-academy
-DB_USERNAME=root
-DB_PASSWORD=root
-
-# 4. Build và khởi động containers
 docker compose -f docker-compose.dev.yml up -d --build
-
-# 5. Cấu hình Laravel
 docker compose -f docker-compose.dev.yml exec app php artisan key:generate
-docker compose -f docker-compose.dev.yml exec app php artisan migrate --force
-docker compose -f docker-compose.dev.yml exec app php artisan db:seed
-
-# 6. Build frontend assets
-pnpm install
-pnpm run build
-
-# 7. Truy cập ứng dụng
-# CMS: http://localhost:8081
-# API: http://localhost:8081/api
+docker compose -f docker-compose.dev.yml exec app php artisan migrate --seed
 ```
 
-### Cài đặt local (không dùng Docker)
+Development endpoints:
+
+```text
+CMS/API: http://localhost:8081
+API base URL: http://localhost:8081/api
+MySQL from the host: 127.0.0.1:3307
+Redis from the host: 127.0.0.1:6380
+```
+
+The development Compose file bind-mounts the source tree for fast code iteration. Production uses a different Compose configuration and does not use this bind mount.
+
+### Running without Docker
 
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
-php artisan db:seed
-pnpm install && pnpm run build
+php artisan migrate --seed
+pnpm install
+pnpm run build
 php artisan serve
 ```
 
-**Chi tiết hơn:** Xem [BUILD_PROJECT.md](./BUILD_PROJECT.md)
+See [PRODUCTION-RUN.md](./PRODUCTION-RUN.md) for the deployment runbook.
 
----
+## Production deployment
 
-## 📡 API Documentation
+Production deployment uses:
 
-### Base URL
+- A Dockerized Laravel application and queue worker
+- Nginx as the public entry point
+- Persistent `mysql_data`, `public_uploads`, and `public_build` volumes
+- HTTPS certificates mounted from the VPS
+- Database and upload backups before deployment
+- Laravel migrations and cache optimization after the image is updated
+- GitHub Actions for automated test/deployment steps when repository secrets and branch rules are configured
+
+The production image build requires a temporary Composer authentication file for GitHub package downloads. Do not commit `.env`, Composer credentials, SSH keys, or production tokens.
+
+For the operational procedure, see [PRODUCTION-RUN.md](./PRODUCTION-RUN.md).
+
+## API surface
+
+The API is primarily protected with JWT customer authentication. Representative endpoints include:
+
+```text
+POST   /api/customer/register
+POST   /api/customer/verify
+POST   /api/customer/login
+POST   /api/customer/refresh
+POST   /api/customer/logout
+
+GET    /api/course/list
+GET    /api/course/detail/{id}
+GET    /api/course/top
+GET    /api/course/categories
+GET    /api/course/tags
+
+GET    /api/cart/content
+POST   /api/cart/add
+DELETE /api/cart/delete/{id}
+
+POST   /api/payment/create
+GET    /api/payment/result
+GET    /api/payment/response
+
+POST   /api/course/video/progress
+GET    /api/course/streak
+POST   /api/course/streak/visit
+POST   /api/course/review/add/{id}
+POST   /api/course/quiz/submit
 ```
-http://localhost:8081/api
+
+The checked-in [swagger.json](./swagger.json) and route definitions are the source of truth for endpoint details. Environment-specific base URLs must be configured through environment variables; no production URL or secret belongs in frontend source code.
+
+## Testing and quality checks
+
+Run the backend test suite inside the application container:
+
+```bash
+docker compose exec -T app php artisan test
+docker compose exec -T app vendor/bin/pint --test
+git diff --check
 ```
 
-### Authentication
-API sử dụng JWT authentication. Gửi token trong header:
-```
-Authorization: Bearer {token}
-```
+The test suite covers cart price resolution, video URL handling, authentication cookie behavior, learning streak range/week logic, API health behavior, and rating aggregation regressions.
 
-### Endpoints chính
+## Current scope and limitations
 
-#### Customer Authentication
-- `POST /api/customer/login` - Đăng nhập
-- `POST /api/customer/register` - Đăng ký
-- `POST /api/customer/verify` - Xác thực email
-- `POST /api/customer/logout` - Đăng xuất
+This is an intentionally scoped portfolio system, not a claim of production-scale readiness. The following are outside the current implemented scope:
 
-#### Course Management
-- `GET /api/course/list` - Danh sách khóa học
-- `GET /api/course/detail/{id}` - Chi tiết khóa học
-- `GET /api/course/top` - Khóa học nổi bật
+- No microservices migration
+- No GraphQL API
+- No Elasticsearch search cluster
+- No WebSocket notification system
+- No Kubernetes or auto-scaling setup
+- No production VNPay merchant approval; the integration is sandbox-oriented
+- Recommendation/ML services are planned separately and are not part of this Laravel repository yet
 
-#### Cart Management
-- `GET /api/cart/content` - Nội dung giỏ hàng
-- `POST /api/cart/add` - Thêm vào giỏ hàng
-- `DELETE /api/cart/delete/{id}` - Xóa khỏi giỏ hàng
+These items should not be presented as implemented features without adding the corresponding code, tests, deployment configuration, and operational evidence.
 
-#### Payment
-- `POST /api/payment/create` - Tạo payment URL
-- `GET /api/payment/result` - Kết quả thanh toán
+## Related documentation
 
-**Chi tiết API:** Xem đặc tả chi tiết tại [swagger.json](./swagger.json) hoặc tài liệu [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md)
+- [PRODUCTION-RUN.md](./PRODUCTION-RUN.md) — production deployment runbook
+- [swagger.json](./swagger.json) — API reference
 
----
+## License
 
-## 🏗️ Kiến trúc
-
-### Request Flow
-```
-Route → Middleware → Controller → Service → Model → Database
-```
-
-### Design Patterns
-- **MVC Pattern**: Separation of concerns
-- **Service Layer Pattern**: Business logic abstraction
-- **Repository Pattern**: (Có thể mở rộng) Data access abstraction
-- **Factory Pattern**: Model factories cho testing
-
-### Database Design
-- **Eloquent ORM**: Object-relational mapping
-- **Relationships**: One-to-Many, Many-to-Many với pivot tables
-- **Migrations**: Version control cho database schema
-- **Seeders**: Dữ liệu mẫu cho development
-
-### Security
-- ✅ CSRF Protection
-- ✅ SQL Injection Prevention (Eloquent ORM)
-- ✅ XSS Prevention (Blade auto-escaping)
-- ✅ JWT Authentication
-- ✅ Role-based Access Control
-- ✅ Input Validation
-
-### Performance Optimization
-- ✅ Eager Loading (N+1 problem solution)
-- ✅ Database Indexing
-- ✅ Caching (Config, Routes, Views)
-- ✅ Queue Jobs cho heavy tasks
-- ✅ Server-side DataTables processing
-
----
-
-## 🔮 Dự định cải tiến
-
-### Short-term (1-2 tháng)
-- [ ] Unit tests và Integration tests
-- [ ] API documentation với Swagger/OpenAPI
-- [ ] Real-time notifications với WebSockets
-- [ ] Advanced search với Elasticsearch
-- [ ] Image optimization và CDN integration
-
-### Medium-term (3-6 tháng)
-- [ ] Microservices architecture (tách services)
-- [ ] Redis caching layer
-- [ ] Message queue với RabbitMQ
-- [ ] GraphQL API (bên cạnh REST)
-- [ ] Mobile app API optimization
-
-### Long-term (6+ tháng)
-- [ ] Kubernetes deployment
-- [ ] CI/CD pipeline hoàn chỉnh
-- [ ] Monitoring và logging (ELK Stack)
-- [ ] Auto-scaling
-- [ ] Multi-tenant support
-
----
-
-## 📚 Tài liệu tham khảo
-
-### Project Documentation
-- [BUILD_PROJECT.md](./BUILD_PROJECT.md) - Hướng dẫn build và deploy chi tiết
-- [EXPERIENCE_DOC.md](./EXPERIENCE_DOC.md) - Kiến thức và kinh nghiệm dự án
-- [BUG_DOC.md](./BUG_DOC.md) - Troubleshooting và bug fixes
-- [CACHE_CLEAR_GUIDE.md](./CACHE_CLEAR_GUIDE.md) - Cache management
-
-### External Resources
-- [Laravel Documentation](https://laravel.com/docs)
-- [Eloquent Relationships](https://laravel.com/docs/eloquent-relationships)
-- [JWT Auth Documentation](https://jwt-auth.readthedocs.io/)
-- [Docker Documentation](https://docs.docker.com/)
-
----
-
+This project is maintained as a portfolio/demo application.
