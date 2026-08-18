@@ -127,26 +127,6 @@ class CourseController extends Controller
     } 
   }
 
-  public function getCategoryBestOfUser() {
-    try {
-      $data = $this->courseServices->getCategoryBestOfUser();
-      return $this->successResponse($data);
-    } catch (\Exception $e) {
-      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      return $this->internalServerErrorResponse();
-    }
-  }
-
-  public function getNewCourses($id) {
-    try {
-      $data = $this->courseServices->getNewCourses($id);
-      return $this->successResponse($data);
-    } catch (\Exception $e) {
-      Helper::createLogError(__FILE__ . ':' .  __LINE__ . ' ' . $e);
-      return $this->internalServerErrorResponse();
-    }
-  }
-
   public function getCategories() {
     try {
       $categories = \App\Models\PostCategory::select('id', 'category_name')->get();

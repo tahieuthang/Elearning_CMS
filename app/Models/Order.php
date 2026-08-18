@@ -23,6 +23,13 @@ class Order extends Model
 
   public $timestamps = true;
 
+  protected $casts = [
+    'amount' => 'integer',
+    'payment_time' => 'datetime',
+    'status' => 'integer',
+    'discount_amount' => 'integer',
+  ];
+
   public function orderItems()
   {
     return $this->hasMany(OrderItem::class, 'order_id');
