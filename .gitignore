@@ -21,3 +21,13 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+.codegraph/
+/.cache
+/.config
+/public/uploads
+.cache/
+/docs/*
+!/docs/ai/
+!/docs/ai/**
+/ignore-docs/*

@@ -1,0 +1,1295 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Elearning CMS API Documentation",
+    "description": "API documentation for the Elearning CMS application, including Customer Authentication, Course management, Cart operations, Orders, Payment integration, and Posts.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Input customer JWT token received from /api/customer/login"
+      }
+    },
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "first_name": { "type": "string", "example": "John" },
+          "last_name": { "type": "string", "example": "Doe" },
+          "email": { "type": "string", "format": "email", "example": "johndoe@example.com" },
+          "phone": { "type": "string", "example": "0987654321" },
+          "status": { "type": "integer", "example": 1 },
+          "created_at": { "type": "string", "example": "2026-06-17 09:02:15" },
+          "updated_at": { "type": "string", "example": "2026-06-18 02:31:43" }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "Javascript cơ bản cho dân anh chị" },
+          "description": { "type": "string", "example": "Javascript cơ bản cho dân anh chị" },
+          "thumbnail": { "type": "string", "example": "/uploads/1781686935_download.jpeg" },
+          "banner": { "type": "string", "example": "/uploads/1781686935_banner.png" },
+          "author": { "type": "string", "example": "Phúc" },
+          "original_price": { "type": "number", "example": 1000000 },
+          "sale_off_price": { "type": "number", "example": 0 },
+          "rating_average": { "type": "string", "example": "0.00" },
+          "rating_count": { "type": "integer", "example": 0 },
+          "is_bought": { "type": "boolean", "example": false }
+        }
+      },
+      "QuizOption": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 28 },
+          "question_id": { "type": "integer", "example": 13 },
+          "option_text": { "type": "string", "example": "false" },
+          "is_correct": { "type": "boolean", "example": true },
+          "created_at": { "type": "string", "example": "2026-06-18T02:31:44.000000Z" },
+          "updated_at": { "type": "string", "example": "2026-06-18T02:31:44.000000Z" }
+        }
+      },
+      "QuizQuestion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 13 },
+          "quiz_id": { "type": "integer", "example": 8 },
+          "question_text": { "type": "string", "example": "Javascript is single-threaded?" },
+          "created_at": { "type": "string", "example": "2026-06-18T02:31:44.000000Z" },
+          "updated_at": { "type": "string", "example": "2026-06-18T02:31:44.000000Z" },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/QuizOption" }
+          }
+        }
+      },
+      "Quiz": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 8 },
+          "title": { "type": "string", "example": "Quiz 1" },
+          "order": { "type": "integer", "example": 1 },
+          "is_passed": { "type": "boolean", "example": false },
+          "is_completed": { "type": "boolean", "example": false },
+          "questions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/QuizQuestion" }
+          }
+        }
+      },
+      "Video": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "Video 1" },
+          "vimeo_id": { "type": "string", "example": "12345678" },
+          "order": { "type": "integer", "example": 0 }
+        }
+      },
+      "CartItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "cart_id": { "type": "integer", "example": 1 },
+          "course_id": { "type": "integer", "example": 1 },
+          "quantity": { "type": "integer", "example": 1 },
+          "course": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer", "example": 1 },
+              "title": { "type": "string", "example": "Javascript cơ bản" },
+              "thumbnail": { "type": "string", "example": "/uploads/1781686935_download.jpeg" },
+              "original_price": { "type": "number", "example": 1000000 },
+              "sale_off_price": { "type": "number", "example": 0 }
+            }
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "code": { "type": "string", "example": "ORD_TEST" },
+          "amount": { "type": "number", "example": 200000 },
+          "customer_id": { "type": "integer", "example": 1 },
+          "payment_method": { "type": "string", "example": "banking" },
+          "status": { "type": "integer", "example": 3 },
+          "created_at": { "type": "string", "example": "2026-06-17 10:36:04" },
+          "updated_at": { "type": "string", "example": "2026-06-17 10:36:04" },
+          "courses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Course" }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/customer/register": {
+      "post": {
+        "summary": "Register a new customer",
+        "tags": ["Customer Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["first_name", "last_name", "email", "password"],
+                "properties": {
+                  "first_name": { "type": "string", "example": "John" },
+                  "last_name": { "type": "string", "example": "Doe" },
+                  "email": { "type": "string", "format": "email", "example": "johndoe@example.com" },
+                  "password": { "type": "string", "minLength": 6, "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 201 },
+                    "message": { "type": "string", "example": "Đăng ký thành công" },
+                    "customer": { "$ref": "#/components/schemas/Customer" },
+                    "code": { "type": "string", "example": "123456" }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/customer/login": {
+      "post": {
+        "summary": "Authenticate customer",
+        "tags": ["Customer Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "johndoe@example.com" },
+                  "password": { "type": "string", "minLength": 6, "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "access_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI..." },
+                    "user": { "$ref": "#/components/schemas/Customer" },
+                    "token_type": { "type": "string", "example": "Bearer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Password is incorrect" },
+          "404": { "description": "Email not registered" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/customer/verify": {
+      "post": {
+        "summary": "Verify email via code",
+        "tags": ["Customer Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code"],
+                "properties": {
+                  "code": { "type": "string", "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verification successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "message": { "type": "string", "example": "success" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Verification code not found" },
+          "409": { "description": "Account already verified or status conflicts" }
+        }
+      }
+    },
+    "/api/customer/forgot-password": {
+      "post": {
+        "summary": "Send password reset link email",
+        "tags": ["Customer Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "johndoe@example.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset link sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Reset link sent to your email." }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/customer/reset-password": {
+      "post": {
+        "summary": "Reset customer password",
+        "tags": ["Customer Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "password_confirmation", "token"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "johndoe@example.com" },
+                  "password": { "type": "string", "minLength": 6, "example": "newpassword123" },
+                  "password_confirmation": { "type": "string", "example": "newpassword123" },
+                  "token": { "type": "string", "example": "abcdef..." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Mật khẩu đã được đặt lại thành công" }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "description": "Validation failed" },
+          "500": { "description": "Password reset failed" }
+        }
+      }
+    },
+    "/api/customer/profile": {
+      "get": {
+        "summary": "Get authenticated customer profile info",
+        "tags": ["Customer Info"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "$ref": "#/components/schemas/Customer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/customer/update-profile": {
+      "patch": {
+        "summary": "Update customer profile info",
+        "tags": ["Customer Info"],
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "first_name": { "type": "string", "example": "John" },
+                  "last_name": { "type": "string", "example": "Doe" },
+                  "phone": { "type": "string", "example": "0987654321" },
+                  "email": { "type": "string", "format": "email", "example": "johndoe@example.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 201 },
+                    "message": { "type": "string", "example": "User successfully update" },
+                    "user": { "$ref": "#/components/schemas/Customer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/customer/change-password": {
+      "patch": {
+        "summary": "Change customer password",
+        "tags": ["Customer Info"],
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password"],
+                "properties": {
+                  "current_password": { "type": "string", "example": "password123" },
+                  "new_password": { "type": "string", "example": "newpassword123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 201 },
+                    "message": { "type": "string", "example": "Thay đổi mật khẩu thành công" },
+                    "customer": { "$ref": "#/components/schemas/Customer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/customer/logout": {
+      "post": {
+        "summary": "Logout customer (invalidate JWT token)",
+        "tags": ["Customer Auth"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Logged out successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/customer/orders": {
+      "get": {
+        "summary": "Get customer orders list",
+        "tags": ["Orders"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Order" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/customer/orders/{id}": {
+      "get": {
+        "summary": "Get order details by ID",
+        "tags": ["Orders"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/customer/orders_code/{code}": {
+      "get": {
+        "summary": "Get order details by Code",
+        "tags": ["Orders"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/course/list": {
+      "get": {
+        "summary": "Get list of courses with filtering",
+        "tags": ["Courses"],
+        "parameters": [
+          { "name": "category_name[]", "in": "query", "required": false, "schema": { "type": "array", "items": { "type": "string" } } },
+          { "name": "tag_name[]", "in": "query", "required": false, "schema": { "type": "array", "items": { "type": "string" } } },
+          { "name": "status[]", "in": "query", "required": false, "schema": { "type": "array", "items": { "type": "integer" } } },
+          { "name": "keyword", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer", "default": 1 } },
+          { "name": "per_page", "in": "query", "required": false, "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Course" }
+                    },
+                    "total": { "type": "integer", "example": 10 },
+                    "count": { "type": "integer", "example": 10 },
+                    "per_page": { "type": "integer", "example": 10 },
+                    "current_page": { "type": "integer", "example": 1 },
+                    "total_pages": { "type": "integer", "example": 1 }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" }
+        }
+      }
+    },
+    "/api/course/detail/{id}": {
+      "get": {
+        "summary": "Get course detail by ID",
+        "tags": ["Courses"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "allOf": [
+                        { "$ref": "#/components/schemas/Course" },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "authorDescription": { "type": "string", "example": "<p>Description</p>" },
+                            "course_duration": { "type": "string", "example": "10 phút" },
+                            "content": { "type": "string", "example": "<p>Content</p>" },
+                            "status": { "type": "integer", "example": 1 },
+                            "course_categories": { "type": "array", "items": { "type": "object" } },
+                            "course_tags": { "type": "array", "items": { "type": "object" } },
+                            "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                            "quizzes": { "type": "array", "items": { "$ref": "#/components/schemas/Quiz" } },
+                            "curriculum": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  { "$ref": "#/components/schemas/Video" },
+                                  { "$ref": "#/components/schemas/Quiz" }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/{id}/coupons": {
+      "get": {
+        "summary": "Get list of active coupons for a specific course",
+        "tags": ["Courses"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 4 },
+                          "code": { "type": "string", "example": "NEWCOUPON" },
+                          "type": { "type": "string", "example": "course" },
+                          "discount_type": { "type": "string", "example": "percent" },
+                          "discount_value": { "type": "number", "example": 15 },
+                          "course_id": { "type": "integer", "example": 1 },
+                          "min_order_amount": { "type": "number", "example": 0 },
+                          "max_uses_per_user": { "type": "integer", "example": 1 },
+                          "max_uses": { "type": "integer", "example": 100 },
+                          "uses": { "type": "integer", "example": 0 },
+                          "is_active": { "type": "boolean", "example": true },
+                          "expires_at": { "type": "string", "example": "2026-08-01 00:00:00" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/top": {
+      "get": {
+        "summary": "Get list of top/hot courses",
+        "tags": ["Courses"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Course" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/categories": {
+      "get": {
+        "summary": "Get list of course categories",
+        "tags": ["Courses"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "category_name": { "type": "string", "example": "Lập trình Web" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/reiview/{id}": {
+      "get": {
+        "summary": "Get reviews for a course",
+        "tags": ["Courses"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 1 },
+                          "comment": { "type": "string", "example": "Good course!" },
+                          "rate": { "type": "integer", "example": 5 },
+                          "customer": { "$ref": "#/components/schemas/Customer" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/review/add/{id}": {
+      "post": {
+        "summary": "Add review to course",
+        "tags": ["Courses"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["comment", "rate"],
+                "properties": {
+                  "comment": { "type": "string", "example": "Good course!" },
+                  "rate": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 201 },
+                    "message": { "type": "string", "example": "success" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/course/customer/best-category": {
+      "get": {
+        "summary": "Get best categories based on customer's orders",
+        "tags": ["Courses"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/course/notifications/new-courses/{id}": {
+      "get": {
+        "summary": "Get new courses in a category as notification recommendations",
+        "tags": ["Courses"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Course" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/course/quiz/submit/{id}": {
+      "post": {
+        "summary": "Submit customer quiz completion status",
+        "tags": ["Courses"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "description": "Quiz ID", "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["isPassed"],
+                "properties": {
+                  "isPassed": { "type": "boolean", "example": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quiz submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "quiz_id": { "type": "integer", "example": 8 },
+                        "is_passed": { "type": "boolean", "example": true },
+                        "is_completed": { "type": "boolean", "example": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Quiz not found" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/api/cart/content": {
+      "get": {
+        "summary": "Get cart content for customer",
+        "tags": ["Cart"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "contents": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/CartItem" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/cart/add": {
+      "post": {
+        "summary": "Add item to cart",
+        "tags": ["Cart"],
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["course_id", "quantity"],
+                "properties": {
+                  "course_id": { "type": "integer", "example": 1 },
+                  "quantity": { "type": "integer", "minimum": 1, "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 201 },
+                    "message": { "type": "string", "example": "Created successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/cart/update/{id}": {
+      "post": {
+        "summary": "Update quantity of cart item by ID",
+        "tags": ["Cart"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["quantity"],
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 1, "example": 2 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "message": { "type": "string", "example": "Success" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/cart/delete/{id}": {
+      "delete": {
+        "summary": "Delete cart item by ID",
+        "tags": ["Cart"],
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "message": { "type": "string", "example": "Deleted successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/cart/destroy": {
+      "post": {
+        "summary": "Clear all items in cart",
+        "tags": ["Cart"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "message": { "type": "string", "example": "Success" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/payment/create": {
+      "post": {
+        "summary": "Create VNPAY payment transaction link",
+        "tags": ["Payment"],
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coupon_code": { "type": "string", "description": "Optional coupon code to apply to order", "example": "COURSE1" },
+                  "concurrency_mode": { "type": "string", "enum": ["bug", "pessimistic", "atomic"], "description": "Concurrency handling mode for testing", "example": "pessimistic" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "string", "example": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?..." }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/payment/result": {
+      "get": {
+        "summary": "Verify VNPAY payment result data returned in callback",
+        "tags": ["Payment"],
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/payment/response": {
+      "get": {
+        "summary": "VNPAY IPN url callback for background notification status updates",
+        "tags": ["Payment"],
+        "responses": {
+          "200": {
+            "description": "Success response format returned to VNPAY",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "RspCode": { "type": "string", "example": "00" },
+                    "Message": { "type": "string", "example": "Confirm Success" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/coupon/apply": {
+      "post": {
+        "summary": "Apply coupon to cart",
+        "tags": ["Coupon"],
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["coupon_code"],
+                "properties": {
+                  "coupon_code": { "type": "string", "example": "COURSE1" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "coupon_code": { "type": "string", "example": "COURSE1" },
+                        "coupon_type": { "type": "string", "example": "course" },
+                        "discount_type": { "type": "string", "example": "percent" },
+                        "discount_value": { "type": "number", "example": 50 },
+                        "discount_amount": { "type": "number", "example": 349500 },
+                        "applied_to_course_id": { "type": "integer", "example": 1 },
+                        "applied_to_course_title": { "type": "string", "example": "Javascript cơ bản" },
+                        "original_total": { "type": "number", "example": 699000 },
+                        "final_total": { "type": "number", "example": 349500 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "422": { "description": "Validation failed / Coupon invalid" }
+        }
+      }
+    },
+    "/api/post/list": {
+      "get": {
+        "summary": "Get paginated list of posts / articles",
+        "tags": ["Posts"],
+        "parameters": [
+          { "name": "page", "in": "query", "required": false, "schema": { "type": "integer" } },
+          { "name": "perPage", "in": "query", "required": false, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "array", "items": { "type": "object" } },
+                    "total": { "type": "integer", "example": 100 },
+                    "perPage": { "type": "integer", "example": 10 },
+                    "page": { "type": "integer", "example": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/post/{id}": {
+      "get": {
+        "summary": "Get post details by ID",
+        "tags": ["Posts"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "data": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Post Not Found" }
+        }
+      }
+    },
+    "/api/video/vimeo/{id}": {
+      "get": {
+        "summary": "Get detail and access configuration of Vimeo video by ID",
+        "tags": ["Videos"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 200 },
+                    "vimeo": { "type": "string", "example": "https://player.vimeo.com/video/12345678" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Video Not Found" }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,135 @@
 <?php
 // config/constants.php
 return [
+  'user_status' => [
+    0 => 'disabled',
+    1 => 'enabled'
+  ],
+  'customer_status' => [
+    0 => 'disable',
+    1 => 'enable'
+  ],
+  'post_status' => [
+    0 => 'private',
+    1 => 'public'
+  ],
   'customer_status_disable' => 0,
   'customer_status_enable' => 1,
+  'per_page' => 50,
+  'page' => 1,
+  'SORT_ORDER' => ['DESC', 'ASC'],
+  'order_status' => [
+    'placed' => 1,
+    'processing' => 2,
+    'completed' => 3,
+    'cancelled' => 4,
+  ],
+  'content_type' => 'course',
+  'course_status_by_text' => [
+    'active' => 1,
+    'private' => 2
+  ],
+  'course_status' => [
+    1 => 'active',
+    2 => 'private'
+  ],
+  'order_status' => [
+    'placed' => 1,
+    'processing' => 2,
+    'completed' => 3,
+    'cancelled' => 4,
+  ],
+  'max_room_image_upload' => 5,
+  'max_capacity_image_upload' => 5000,
+  'max_capacity_video_upload' => 1000000,
+  'payment_transaction_status' => [
+    'waiting_confirm' => 1,
+    'completed' => 2,
+    'failed' => 3,
+  ],
+  'payment_method' => [
+    'vnpay' => 'vnpay'
+  ],
+  'vnpay_payment_url' => env('VNPAY_PAYMENT_URL'),
+  'vnpay_payment_tmncode' => env('VNPAY_PAYMENT_TMNCODE'),
+  'vnpay_payment_hashsecret' => env('VNPAY_PAYMENT_HASHSECRET'),
+  'vnpay_payment_academy_return_url' => env('VNPAY_PAYMENT_ACADEMY_RETURN_URL'),
+
+  'vnpay_order_type' => '190000', // 190000 Giải trí & Đào tạo
+  'vnpay_lifetime' => 15, // minute
+  'job_status' => [
+    'inProgress' => 1,
+    'success' => 2,
+    'fail' => 3,
+  ],
+
+  'level_rate' => [
+    1 => 'Rất tệ',
+    2 => 'Tệ',
+    3 => 'Bình thường',
+    4 => 'Hay',
+    5 => 'Tuyệt vời',
+  ],
+  'permission_list' => [
+    'customer.list',
+    'customer.edit',
+    'customer.create',
+    'customer.delete',
+    'room.list',
+    'room.edit',
+    'room.create',
+    'room.delete',
+    'event.list',
+    'event.edit',
+    'event.create',
+    'event.delete',
+    'post.list',
+    'post.edit',
+    'post.create',
+    'post.delete',
+    'course.list',
+    'course.edit',
+    'course.create',
+    'course.delete',
+    'tag.list',
+    'tag.edit',
+    'tag.create',
+    'tag.delete',
+    'category.list',
+    'category.create',
+    'category.edit',
+    'category.delete',
+    'banner.list',
+    'banner.edit',
+    'banner.create',
+    'banner.delete',
+    'qr.list',
+    'qr.create',
+    'qr.edit',
+    'qr.delete',
+    'qr.export',
+    'template.list',
+    'template.create',
+    'template.delete',
+    'template.edit',
+    'space.list',
+    'space.edit',
+    'space.create',
+    'space.delete',
+    'admin.list',
+    'admin.create',
+    'admin.edit',
+    'admin.delete',
+    'role.list',
+    'role.create',
+    'role.delete',
+    'role.edit',
+    'permission.list',
+    'permission.edit',
+    'permission.create',
+    'permission.delete',
+    'video.list',
+    'video.upload',
+    'video.delete',
+    ],
 ];

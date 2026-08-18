@@ -101,7 +101,15 @@ return [
     |
     */
 
-    'ttl' => env('JWT_TTL', 60),
+    'ttl' => env('JWT_TTL', 15),
+
+    'refresh_cookie' => env('JWT_REFRESH_COOKIE', 'refresh_token'),
+
+    'refresh_cookie_minutes' => env('JWT_REFRESH_COOKIE_MINUTES', 20160),
+
+    'refresh_cookie_secure' => env('AUTH_COOKIE_SECURE', env('APP_ENV') === 'production'),
+
+    'refresh_cookie_same_site' => env('AUTH_COOKIE_SAME_SITE', 'lax'),
 
     /*
     |--------------------------------------------------------------------------

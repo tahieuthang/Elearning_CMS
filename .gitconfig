@@ -1,0 +1,4 @@
+[safe]
+	directory = /var/www
+	directory = *
+	directory = *

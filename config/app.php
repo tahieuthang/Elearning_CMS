@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Ho_Chi_Minh'),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'vi'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
@@ -105,6 +105,19 @@ return [
         ),
     ],
 
+    // 'providers' => [
+    //     Barryvdh\DomPDF\ServiceProvider::class,
+    // ],
+    // 'aliases' => [
+    //     'PDF' => Barryvdh\DomPDF\Facade::class,
+    // ],
+    // 'aliases' => [
+    //     'Menu' => JeroenNoten\LaravelAdminLte\Menu\MenuBuilder::class,
+    // ],
+    // 'providers' => [
+    //     Illuminate\View\ViewServiceProvider::class,
+    //     JeroenNoten\LaravelAdminLte\AdminLteServiceProvider::class,
+    // ],
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver
@@ -117,10 +130,15 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
+    // 'providers' => [
+    //     Jeroennoten\LaravelAdminLte\AdminLteServiceProvider::class,
+    // ],
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'url' => env('APP_URL', 'http://localhost')
 
 ];

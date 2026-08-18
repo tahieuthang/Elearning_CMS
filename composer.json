@@ -7,10 +7,23 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "dompdf/dompdf": "^3.1",
+        "jeroennoten/laravel-adminlte": "3.7",
+        "kartik-v/yii2-widget-fileinput": "^1.1",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "tymon/jwt-auth": "^2.1"
+        "laravel/ui": "^4.6",
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "predis/predis": "*",
+        "ramsey/uuid": "^4.8",
+        "select2/select2": "^4.0",
+        "sentry/sentry-laravel": "^4.26",
+        "spatie/laravel-permission": "^6.20",
+        "tymon/jwt-auth": "^2.1",
+        "vimeo/laravel": "^5.9",
+        "yajra/laravel-datatables-oracle": "^11.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -69,9 +82,10 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "robloach/component-installer": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "beta",
     "prefer-stable": true
 }
