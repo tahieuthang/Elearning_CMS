@@ -17,4 +17,3 @@ pnpm-debug.log*
 .env.local
 .env.development
 .phpunit.result.cache
-docker-compose

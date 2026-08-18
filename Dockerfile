@@ -16,14 +16,15 @@ RUN --mount=type=secret,id=composer_auth \
     COMPOSER_AUTH="$(cat /run/secrets/composer_auth)" \
     composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
 
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm ci --no-audit --no-fund
+RUN npm install --global pnpm@9 \
+ && pnpm install --frozen-lockfile
 
 COPY . .
 
 RUN composer dump-autoload --no-dev --optimize --no-interaction \
- && npm run build \
+ && pnpm run build \
  && mkdir -p public/uploads \
  && chown -R www-data:www-data storage bootstrap/cache public/uploads \
  && chmod -R 775 storage bootstrap/cache public/uploads
