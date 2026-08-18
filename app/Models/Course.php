@@ -57,9 +57,9 @@ class Course extends Model
       ->selectRaw('AVG(rate) as average, COUNT(*) as count')
       ->first();
     
-    $this->update([
+    $this->forceFill([
       'rating_average' => round($ratingStats->average ?? 0, 2),
       'rating_count' => $ratingStats->count ?? 0
-    ]);
+    ])->save();
   }
 }

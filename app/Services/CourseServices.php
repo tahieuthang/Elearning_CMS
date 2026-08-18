@@ -982,12 +982,6 @@ class CourseServices
       'rate' => $data['rate']
     ]);
 
-    // Update course rating
-    $course = Course::find($data['course_id']);
-    if ($course) {
-      $course->updateRating();
-    }
-
     return $review;
   }
 
