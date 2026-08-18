@@ -10,6 +10,7 @@ use App\Http\Controllers\API\CourseController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\VideoController;
+use App\Http\Controllers\API\CustomerNotificationController;
 use App\Http\Middleware\JWTVerifyCustomer;
 
 Route::get('/ho', function () {
@@ -31,6 +32,8 @@ Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
     Route::patch('/update-profile', [CustomerController::class, 'updateProfile']); //ok
     Route::get('/profile', [CustomerController::class, 'profile']); //ok
     Route::patch('/change-password', [CustomerController::class, 'changePassword']); //ok
+    Route::get('/notifications', [CustomerNotificationController::class, 'index']);
+    Route::patch('/notifications/{notificationId}/read', [CustomerNotificationController::class, 'markRead']);
   });
 });
 
@@ -71,8 +74,6 @@ Route::group(['prefix' => 'course'], function () {
 
   Route::group(['middleware' => [JWTVerifyCustomer::class]], function () {
     Route::post('/review/add/{id}', [CourseController::class, 'addReviews']);
-    Route::get('/customer/best-category', [CourseController::class, 'getCategoryBestOfUser']);
-    Route::get('/notifications/new-courses/{id}', [CourseController::class, 'getNewCourses']);
     Route::post('/video/progress', [CourseController::class, 'postVideoProgress']);
     Route::get('/streak', [CourseController::class, 'getLearningStreak']);
     Route::post('/streak/visit', [CourseController::class, 'startLearningStreakVisit']);

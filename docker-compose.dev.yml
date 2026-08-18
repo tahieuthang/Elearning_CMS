@@ -61,5 +61,16 @@ services:
       - mysql
       - redis
 
+  reverb:
+    image: elearning
+    container_name: elearning-reverb
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    depends_on:
+      - redis
+
 volumes:
   mysql_data:

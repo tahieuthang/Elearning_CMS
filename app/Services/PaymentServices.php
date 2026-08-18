@@ -6,6 +6,11 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Cart;
 use App\Models\PaymentTransaction;
+use App\Notifications\OrderPaymentCompletedNotification;
+use App\Events\OrderPaymentCompletedBroadcast;
+use App\Http\Resources\CustomerNotificationResource;
+use Illuminate\Notifications\DatabaseNotification;
+use Throwable;
 use App\Helpers\Helper;
 use App\Models\OrderItem;
 use Carbon\Carbon;
@@ -292,7 +297,7 @@ class PaymentServices
     $vnp_OrderCode = $inputData['vnp_TxnRef'];
     // CHECK SIGNATURE
     if ($secureHash == $vnp_SecureHash) {
-      $order = Order::where('code', $vnp_OrderCode)->first();
+      $order = Order::where('code', $vnp_OrderCode)->lockForUpdate()->first();
       if ($order) {
         if ((int)$order->amount === (int)$vnp_Amount) {
           if ($order->status === Config::get('constants.order_status.processing')) {
@@ -304,6 +309,37 @@ class PaymentServices
                 'status' => Config::get('constants.order_status.completed'),
                 'payment_time' => Carbon::now()
               ]);
+              $order->refresh();
+              $customer = $order->customer;
+              $paymentNotification = new OrderPaymentCompletedNotification($order);
+              $customer->notifyNow($paymentNotification);
+              $notificationId = $paymentNotification->id;
+              $customerId = (int) $customer->id;
+
+              DB::afterCommit(function () use ($notificationId, $customerId): void {
+                try {
+                  $databaseNotification = DatabaseNotification::query()
+                    ->whereKey($notificationId)
+                    ->first();
+
+                  if (!$databaseNotification) {
+                    Log::warning('Payment notification was not found after commit.', [
+                      'notification_id' => $notificationId,
+                      'customer_id' => $customerId,
+                    ]);
+                    return;
+                  }
+
+                  $payload = (new CustomerNotificationResource($databaseNotification))->resolve();
+                  broadcast(new OrderPaymentCompletedBroadcast($customerId, $payload));
+                } catch (Throwable $exception) {
+                  Log::warning('Order payment notification broadcast could not be scheduled.', [
+                    'notification_id' => $notificationId,
+                    'customer_id' => $customerId,
+                    'exception' => $exception::class,
+                  ]);
+                }
+              });
             } else {
               $order->paymentTransaction()->update([
                 'status' => Config::get('constants.payment_transaction_status.failed')

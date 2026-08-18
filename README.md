@@ -273,13 +273,11 @@ This is an intentionally scoped portfolio system, not a claim of production-scal
 - No WebSocket notification system
 - No Kubernetes or auto-scaling setup
 - No production VNPay merchant approval; the integration is sandbox-oriented
-- Recommendation/ML services are planned separately and are not part of this Laravel repository yet
 
 These items should not be presented as implemented features without adding the corresponding code, tests, deployment configuration, and operational evidence.
 
 ## Related documentation
 
-- [PRODUCTION-RUN.md](./PRODUCTION-RUN.md) — production deployment runbook
 - [swagger.json](./swagger.json) — API reference
 
 ## License
