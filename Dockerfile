@@ -18,7 +18,7 @@ RUN --mount=type=secret,id=composer_auth \
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN npm install --global pnpm@9 \
+RUN npm install --global pnpm@10 \
  && pnpm install --frozen-lockfile
 
 COPY . .
