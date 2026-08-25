@@ -47,13 +47,25 @@ services:
     ports:
       - "6380:6379"
 
-  queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: elearning-queue
-    command: ./start-queue.sh
+  horizon:
+    image: elearning
+    container_name: elearning-horizon
+    command: php artisan horizon
     restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    depends_on:
+      - app
+      - mysql
+      - redis
+
+  scheduler:
+    image: elearning
+    container_name: elearning-scheduler
+    command: php artisan schedule:work
+    restart: unless-stopped
+    working_dir: /var/www
     volumes:
       - .:/var/www
     depends_on:
