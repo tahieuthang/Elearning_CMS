@@ -13,12 +13,17 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 
 RUN --mount=type=secret,id=composer_auth \
+    --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache \
     COMPOSER_AUTH="$(cat /run/secrets/composer_auth)" \
     composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --no-autoloader
 
+RUN npm install --global pnpm@10
+
 COPY package.json pnpm-lock.yaml ./
 
-RUN npm install --global pnpm@10 \
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store \
  && pnpm install --frozen-lockfile
 
 COPY . .
