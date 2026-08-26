@@ -30,6 +30,11 @@ class OrderPaymentCompletedBroadcast implements ShouldBroadcast
         return 'order.payment.completed';
     }
 
+    public function broadcastQueue(): string
+    {
+        return 'notifications';
+    }
+
     public function broadcastWith(): array
     {
         return $this->notification;

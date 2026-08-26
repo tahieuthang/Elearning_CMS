@@ -32,6 +32,7 @@ class UploadToR2 implements ShouldQueue
    */
   public function __construct(string $file, $videoId, int $videoUploadingRecordId)
   {
+    $this->onQueue('uploads');
     $this->file = $file;
     $this->videoId = $videoId;
     $this->videoUploadingRecordId = $videoUploadingRecordId;

@@ -2,11 +2,15 @@
 
 namespace App\Notifications;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class CustomerActiveNotification extends Notification
+class CustomerActiveNotification extends Notification implements ShouldQueue
 {
+  use Queueable;
+
   protected $confirmation_code;
 
   public function __construct($confirmation_code)
@@ -16,6 +20,11 @@ class CustomerActiveNotification extends Notification
   public function via($notifiable)
   {
     return ['mail'];
+  }
+
+  public function viaQueues(): array
+  {
+    return ['mail' => 'emails'];
   }
 
   public function toMail($notifiable)

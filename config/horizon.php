@@ -2,6 +2,58 @@
 
 use Illuminate\Support\Str;
 
+$defaultSupervisor = [
+    'connection' => 'redis',
+    'queue' => ['default'],
+    'balance' => 'simple',
+    'maxProcesses' => 1,
+    'maxTime' => 0,
+    'maxJobs' => 0,
+    'memory' => 128,
+    'tries' => 3,
+    'timeout' => 600,
+    'nice' => 0,
+];
+
+$uploadsSupervisor = [
+    'connection' => 'redis',
+    'queue' => ['uploads'],
+    'balance' => 'simple',
+    'maxProcesses' => 1,
+    'maxTime' => 0,
+    'maxJobs' => 0,
+    'memory' => 128,
+    'tries' => 3,
+    'timeout' => 600,
+    'nice' => 0,
+];
+
+$emailsSupervisor = [
+    'connection' => 'redis',
+    'queue' => ['emails'],
+    'balance' => 'simple',
+    'maxProcesses' => 1,
+    'maxTime' => 0,
+    'maxJobs' => 0,
+    'memory' => 128,
+    'tries' => 3,
+    'timeout' => 120,
+    'nice' => 0,
+];
+
+$notificationsSupervisor = [
+    'connection' => 'redis',
+    'queue' => ['notifications'],
+    'balance' => 'simple',
+    'maxProcesses' => 1,
+    'maxTime' => 0,
+    'maxJobs' => 0,
+    'memory' => 128,
+    'tries' => 3,
+    'timeout' => 120,
+    'nice' => 0,
+];
+
 return [
     'name' => env('HORIZON_NAME'),
     'domain' => env('HORIZON_DOMAIN'),
@@ -12,6 +64,9 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:uploads' => 60,
+        'redis:emails' => 60,
+        'redis:notifications' => 60,
     ],
 
     'trim' => [
@@ -36,39 +91,20 @@ return [
     'fast_termination' => false,
     'memory_limit' => 64,
 
-    'defaults' => [
-        'production-supervisor' => [
-            'connection' => 'redis',
-            'queue' => ['default'],
-            'balance' => 'simple',
-            'maxProcesses' => 1,
-            'maxTime' => 0,
-            'maxJobs' => 0,
-            'memory' => 128,
-            'tries' => 3,
-            'timeout' => 600,
-            'nice' => 0,
-        ],
-        'local-supervisor' => [
-            'connection' => 'redis',
-            'queue' => ['default'],
-            'balance' => 'simple',
-            'maxProcesses' => 1,
-            'maxTime' => 0,
-            'maxJobs' => 0,
-            'memory' => 128,
-            'tries' => 3,
-            'timeout' => 600,
-            'nice' => 0,
-        ],
-    ],
+    'defaults' => [],
 
     'environments' => [
         'production' => [
-            'production-supervisor' => [],
+            'production-supervisor' => $defaultSupervisor,
+            'uploads-supervisor' => $uploadsSupervisor,
+            'emails-supervisor' => $emailsSupervisor,
+            'notifications-supervisor' => $notificationsSupervisor,
         ],
         'local' => [
-            'local-supervisor' => [],
+            'local-supervisor' => $defaultSupervisor,
+            'uploads-supervisor' => $uploadsSupervisor,
+            'emails-supervisor' => $emailsSupervisor,
+            'notifications-supervisor' => $notificationsSupervisor,
         ],
     ],
 ];

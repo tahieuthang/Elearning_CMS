@@ -34,6 +34,7 @@ class UploadToVimeo implements ShouldQueue
    */
   public function __construct($file, $localfileId, $videoUploadingRecordId, array $options = [])
   {
+    $this->onQueue('uploads');
     $this->file = $file;
     $this->localfileId = $localfileId;
     $this->videoUploadingRecordId = $videoUploadingRecordId;
