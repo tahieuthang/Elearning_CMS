@@ -131,5 +131,6 @@ return [
     'video.list',
     'video.upload',
     'video.delete',
+    'horizon.view',
     ],
 ];
